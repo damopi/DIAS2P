@@ -13,7 +13,8 @@ class ConsoleParams:
     warnings: bool = False
 
 
-def print_console(console, params: ConsoleParams):
+#def print_console(console, params: ConsoleParams):
+def print_console(params: ConsoleParams):
     """
     Runs a Dynamic Terminal to present program info
     :param console: Terminal Object
@@ -34,11 +35,12 @@ def print_console(console, params: ConsoleParams):
         ]
     )
     
-    console.clear()
-    console.addstr(system + '\n')
-    console.addstr(template + '\n')
+    print(system+'. '+template)
+    #console.clear()
+    #console.addstr(system + '\n')
+    #console.addstr(template + '\n')
     
-    console.refresh()
+    #console.refresh()
     
 
 def print_fps_on_terminal(fps):

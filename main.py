@@ -8,7 +8,6 @@ from utils import utils, classes, gpios, cameras, info, tracking, contour
 from trackers.bboxssd import BBox
 from trackers.bboxssdtracker import BBoxTracker
 import platform
-import curses
 import numpy as np
 
 
@@ -34,7 +33,6 @@ if __name__ == "__main__":
     net = jetson.inference.detectNet(arch, sys.argv, threshold)
     
     # Start printing console
-    console = curses.initscr()
     consoleConfig = info.ConsoleParams()
     consoleConfig.system = platform.system()
     
@@ -274,7 +272,7 @@ if __name__ == "__main__":
             cv2.imshow("Road CAM", roadFrame)
         
         # SHOW DATA IN CONSOLE
-        info.print_console(console, consoleConfig)
+        info.print_console(consoleConfig)
         
         # ----------------------------------
         #
@@ -290,6 +288,5 @@ if __name__ == "__main__":
                 gpios.warning_OFF()
                 gpios.deactivate_jetson_board()
             # close any open windows
-            curses.endwin()
             cv2.destroyAllWindows()
             break
