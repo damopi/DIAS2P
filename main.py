@@ -22,9 +22,9 @@ if __name__ == "__main__":
     
     # Show live results
     # when production set this to False as it consume resources
-    SHOW = True
+    SHOW_IF_NOT_JETSON = True
     VIDEO = False
-    SHOW_INPUTS = True
+    SHOW_INPUTS_IF_JETSON = True
     
     # load the object detection network
     arch = "ssd-mobilenet-v2"
@@ -140,11 +140,11 @@ if __name__ == "__main__":
         if is_jetson:
  
             # get frame from crosswalk and detect
-            crosswalkMalloc, _, _ = crosswalkCam.CaptureRGBA(zeroCopy=SHOW_INPUTS)            
+            crosswalkMalloc, _, _ = crosswalkCam.CaptureRGBA(zeroCopy=SHOW_INPUTS_IF_JETSON)
             # get frame from road and detect
-            roadMalloc, _, _ = roadCam.CaptureRGBA(zeroCopy=SHOW_INPUTS)            
+            roadMalloc, _, _ = roadCam.CaptureRGBA(zeroCopy=SHOW_INPUTS_IF_JETSON)
 
-            if SHOW_INPUTS:
+            if SHOW_INPUTS_IF_JETSON:
                 jetson.utils.cudaDeviceSynchronize()
                 crosswalk_numpy_img = jetson.utils.cudaToNumpy(crosswalkMalloc, W, H, 4)
                 road_numpy_img = jetson.utils.cudaToNumpy(roadMalloc, W, H, 4)
@@ -253,7 +253,7 @@ if __name__ == "__main__":
         
         # Transform CUDA MALLOC to NUMPY frame
         # is highly computationally expensive for Jetson Platforms
-        if SHOW and not is_jetson:
+        if SHOW_IF_NOT_JETSON and not is_jetson:
             # Activate Visual Warnings
             cv2.rectangle(crosswalkFrame, (0, 0), (200, 200), (255, 255, 255), -1)
             
