@@ -97,8 +97,11 @@ if __name__ == "__main__":
         road_idx, crosswalk_idx = cameras.get_road_and_crosswalk_indexes()
         road_idx = "/dev/video" + str(road_idx)
         crosswalk_idx = "/dev/video" + str(crosswalk_idx)
+        #print('STARTING CROSSWALK CAMERA')
         crosswalkCam = jetson.utils.gstCamera(W, H, crosswalk_idx)
+        #print('STARTING ROAD CAMERA')
         roadCam = jetson.utils.gstCamera(W, H, road_idx)
+        #print('FINISHED STARTING CAMERAS')
     
     else:
         # If NOT in jetson platform initialize Cameras from cv2 (slower inferences)
@@ -138,9 +141,12 @@ if __name__ == "__main__":
         if is_jetson:
  
             # get frame from crosswalk and detect
+            #print('CAPTURING SNAPSHOT FROM CROSSWALK CAMERA')
             crosswalkMalloc, _, _ = crosswalkCam.CaptureRGBA(zeroCopy=SHOW_INPUTS_IF_JETSON)
             # get frame from road and detect
+            #print('CAPTURING SNAPSHOT FROM ROAD CAMERA')
             roadMalloc, _, _ = roadCam.CaptureRGBA(zeroCopy=SHOW_INPUTS_IF_JETSON)
+            #print('FINISHED CAPTURING SNAPSHOTS')
 
             if SHOW_INPUTS_IF_JETSON:
                 jetson.utils.cudaDeviceSynchronize()
@@ -151,8 +157,11 @@ if __name__ == "__main__":
                 cv2.imshow("crosswalk", crosswalk_numpy_img)
                 cv2.imshow("road", road_numpy_img)
 
+            #print('DETECTING PEDESTRIANS')
             pedestrianDetections = net.Detect(crosswalkMalloc, W, H, overlay)
+            #print('DETECTING VEHICLES')
             vehicleDetections = net.Detect(roadMalloc, W, H, overlay)
+            #print('FINISHED DETECTING VEHICLES')
   
         # If we are NOT on jetson use CV2
         else:
