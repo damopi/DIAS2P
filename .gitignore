@@ -2,3 +2,5 @@
 \.idea/
 /yolo-tiny.h5
 /video
+*/__pycache__
+__pycache__
