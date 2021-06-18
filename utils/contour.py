@@ -1,9 +1,10 @@
 import cv2
+import jetson
 from os import path
 from numpy import save, load
 from numpy import array
 import warnings
-
+import numpy as np
 
 def drawContour(image, contour):
     
@@ -88,7 +89,7 @@ def contour_exists(name):
     return True
 
 
-def select_points_in_frame(cam, name, point_nb=4):
+def select_points_in_frame(cam, name, point_nb=4, is_jetson=False):
     
     """
     Grabs frame of cam and waits till user has selected points
@@ -98,7 +99,7 @@ def select_points_in_frame(cam, name, point_nb=4):
     :param point_nb: int, number of points
     :return: contour, list of coordinates of contour
     """
-    
+    print("SELECT POINTS IN FRAME.")
     # Sanity Check: need min 3 points to make contour
     if point_nb < 3:
         raise Exception('Minimum point required is 3, got', point_nb)
@@ -113,7 +114,13 @@ def select_points_in_frame(cam, name, point_nb=4):
     params = [points, point_nb]
 
     # Read frame of cam
-    _, first_frame = cam.read()
+    if is_jetson:
+        imgFromCamera, width, height = cam.CaptureRGBA(zeroCopy=1)
+        jetson.utils.cudaDeviceSynchronize()
+        first_frame = jetson.utils.cudaToNumpy(imgFromCamera, width, height, 4)
+        first_frame = cv2.cvtColor(first_frame.astype(np.uint8), cv2.COLOR_RGBA2BGR)
+    else:
+        _, first_frame = cam.read()
     # Make copy
     clean_frame = first_frame.copy()
 

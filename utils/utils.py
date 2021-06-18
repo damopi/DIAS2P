@@ -2,7 +2,6 @@ import jetson.utils
 import platform
 import cv2
 import numpy as np
-from imageai.Detection import ObjectDetection
 
 
 def is_jetson_platform():

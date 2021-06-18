@@ -9,6 +9,7 @@ from trackers.bboxssd import BBox
 from trackers.bboxssdtracker import BBoxTracker
 import platform
 import curses
+import numpy as np
 
 
 if __name__ == "__main__":
@@ -21,14 +22,15 @@ if __name__ == "__main__":
     
     # Show live results
     # when production set this to False as it consume resources
-    SHOW = False
-    VIDEO = True
+    SHOW = True
+    VIDEO = False
+    SHOW_INPUTS = True
     
     # load the object detection network
     arch = "ssd-mobilenet-v2"
     overlay = "box,labels,conf"
     threshold = 0.7
-    W, H = (800, 480)
+    W, H = (640, 480)
     net = jetson.inference.detectNet(arch, sys.argv, threshold)
     
     # Start printing console
@@ -88,16 +90,17 @@ if __name__ == "__main__":
         # Override initial width and height
         W = int(crosswalkCam.get(3))  # float
         H = int(crosswalkCam.get(4))  # float
-    
+ 
     elif is_jetson:
         # If in jetson platform initialize Cameras from CUDA (faster inferences)
+        print("Is jetson")
         print('[*] Starting camera...')
         # Select Road and Crosswalk cameras
         road_idx, crosswalk_idx = cameras.get_road_and_crosswalk_indexes()
-        road_idx = "dev/video" + str(road_idx)
-        crosswalk_idx = "dev/video" + str(crosswalk_idx)
-        crosswalkCam = jetson.utils.gstCamera(W, H, "dev/video0")
-        roadCam = jetson.utils.gstCamera(W, H, "dev/video1")
+        road_idx = "/dev/video" + str(road_idx)
+        crosswalk_idx = "/dev/video" + str(crosswalk_idx)
+        crosswalkCam = jetson.utils.gstCamera(W, H, crosswalk_idx)
+        roadCam = jetson.utils.gstCamera(W, H, road_idx)
     
     else:
         # If NOT in jetson platform initialize Cameras from cv2 (slower inferences)
@@ -111,12 +114,12 @@ if __name__ == "__main__":
         # Override initial width and height
         W = int(crosswalkCam.get(3))  # float
         H = int(crosswalkCam.get(4))  # float
-    
+
     # Get ROIs from cross and road cam
-    crossContourUp = contour.select_points_in_frame(crosswalkCam, 'crossContourUp')
-    crossContourDown = contour.select_points_in_frame(crosswalkCam, 'crossContourDown')
-    roadContour = contour.select_points_in_frame(roadCam, 'roadContour')
-    
+    crossContourUp = contour.select_points_in_frame(crosswalkCam, 'crossContourUp', is_jetson=is_jetson)
+    crossContourDown = contour.select_points_in_frame(crosswalkCam, 'crossContourDown', is_jetson=is_jetson)
+    roadContour = contour.select_points_in_frame(roadCam, 'roadContour', is_jetson=is_jetson)
+
     # ---------------------------------------
     #
     #      VIDEO PROCESSING MAIN LOOP
@@ -126,23 +129,33 @@ if __name__ == "__main__":
     while True:
         
         start_time = time.time()  # start time of the loop
-        
+ 
         # ---------------------------------------
         #
         #              DETECTION
         #
         # ---------------------------------------
-        
+
         # if we are on Jetson use jetson inference
         if is_jetson:
-            
+ 
             # get frame from crosswalk and detect
-            crosswalkMalloc, _, _ = crosswalkCam.CaptureRGBA()
-            pedestrianDetections = net.Detect(crosswalkMalloc, W, H, overlay)
+            crosswalkMalloc, _, _ = crosswalkCam.CaptureRGBA(zeroCopy=SHOW_INPUTS)            
             # get frame from road and detect
-            roadMalloc, _, _ = roadCam.CaptureRGBA()
+            roadMalloc, _, _ = roadCam.CaptureRGBA(zeroCopy=SHOW_INPUTS)            
+
+            if SHOW_INPUTS:
+                jetson.utils.cudaDeviceSynchronize()
+                crosswalk_numpy_img = jetson.utils.cudaToNumpy(crosswalkMalloc, W, H, 4)
+                road_numpy_img = jetson.utils.cudaToNumpy(roadMalloc, W, H, 4)
+                crosswalk_numpy_img = cv2.cvtColor(crosswalk_numpy_img.astype(np.uint8), cv2.COLOR_RGBA2BGR)
+                road_numpy_img = cv2.cvtColor(road_numpy_img.astype(np.uint8), cv2.COLOR_RGBA2BGR)
+                cv2.imshow("crosswalk", crosswalk_numpy_img)
+                cv2.imshow("road", road_numpy_img)
+
+            pedestrianDetections = net.Detect(crosswalkMalloc, W, H, overlay)
             vehicleDetections = net.Detect(roadMalloc, W, H, overlay)
-        
+  
         # If we are NOT on jetson use CV2
         else:
             # Check if more frames are available
@@ -161,11 +174,11 @@ if __name__ == "__main__":
             # Get processes frame to fit Cuda Malloc Size
             crosswalkFrame, crosswalkMalloc = utils.frameToCuda(crosswalkFrame, W, H)
             roadFrame, roadMalloc = utils.frameToCuda(roadFrame, W, H)
-            
+
             # Get detections Detectnet.Detection Object
             pedestrianDetections = net.Detect(crosswalkMalloc, W, H, overlay)
             vehicleDetections = net.Detect(roadMalloc, W, H, overlay)
-        
+
         # ---------------------------------------
         #
         #               TRACKING
