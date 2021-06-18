@@ -89,7 +89,7 @@ def contour_exists(name):
     return True
 
 
-def select_points_in_frame(cam, name, point_nb=4, is_jetson=False):
+def select_points_in_frame(cam, name, point_nb=4, is_jetson=False, is_interactive=True):
     
     """
     Grabs frame of cam and waits till user has selected points
@@ -99,6 +99,9 @@ def select_points_in_frame(cam, name, point_nb=4, is_jetson=False):
     :param point_nb: int, number of points
     :return: contour, list of coordinates of contour
     """
+    if not is_interactive:
+        contour = load_contour(name)
+        return contour
     print("SELECT POINTS IN FRAME.")
     # Sanity Check: need min 3 points to make contour
     if point_nb < 3:

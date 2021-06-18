@@ -2,6 +2,7 @@ import jetson.inference
 import jetson.utils
 import cv2
 import sys
+import os
 import time
 from threading import Timer
 from utils import utils, classes, gpios, cameras, info, tracking, contour
@@ -24,13 +25,28 @@ if __name__ == "__main__":
     SHOW_IF_NOT_JETSON = True
     VIDEO = False
     SHOW_INPUTS_IF_JETSON = True
-    
+    # tell the script if it can spawn windows to show images
+    RUNNING_ON_DESKTOP = True
+    # right now, this only works in *NIX, so set to False if you're on Windows/MAC
+    CHECK_IF_RUNNING_ON_DESKTOP = True
+    # the setup is interactive by default
+    INTERACTIVE_SETUP = True
+    NON_INTERACTIVE_IDX_CAMERA_ROAD      = 1
+    NON_INTERACTIVE_IDX_CAMERA_CROSSWALK = 2
+
     # load the object detection network
     arch = "ssd-mobilenet-v2"
     overlay = "box,labels,conf"
     threshold = 0.7
     W, H = (640, 480)
     net = jetson.inference.detectNet(arch, sys.argv, threshold)
+    
+    if CHECK_IF_RUNNING_ON_DESKTOP:
+      RUNNING_ON_DESKTOP = ('DISPLAY' in os.environ) and (os.environ['DISPLAY']!='')
+      if not RUNNING_ON_DESKTOP:
+        SHOW_INPUTS_IF_JETSON = False
+        SHOW_IF_NOT_JETSON = False
+        INTERACTIVE_SETUP = False
     
     # Start printing console
     consoleConfig = info.ConsoleParams()
@@ -94,7 +110,7 @@ if __name__ == "__main__":
         print("Is jetson")
         print('[*] Starting camera...')
         # Select Road and Crosswalk cameras
-        road_idx, crosswalk_idx = cameras.get_road_and_crosswalk_indexes()
+        road_idx, crosswalk_idx = cameras.get_road_and_crosswalk_indexes(doNotAsk=not INTERACTIVE_SETUP, DEFAULT_VALUES=(NON_INTERACTIVE_IDX_CAMERA_ROAD, NON_INTERACTIVE_IDX_CAMERA_CROSSWALK))
         road_idx = "/dev/video" + str(road_idx)
         crosswalk_idx = "/dev/video" + str(crosswalk_idx)
         #print('STARTING CROSSWALK CAMERA')
@@ -109,7 +125,7 @@ if __name__ == "__main__":
         print('[*] Starting camera...')
         
         # Select Road and Crosswalk cameras
-        road_idx, crosswalk_idx = cameras.get_road_and_crosswalk_indexes()
+        road_idx, crosswalk_idx = cameras.get_road_and_crosswalk_indexes(doNotAsk=not INTERACTIVE_SETUP, DEFAULT_VALUES=(NON_INTERACTIVE_IDX_CAMERA_ROAD, NON_INTERACTIVE_IDX_CAMERA_CROSSWALK))
         crosswalkCam = cv2.VideoCapture(crosswalk_idx)
         roadCam = cv2.VideoCapture(road_idx)
         # Override initial width and height
@@ -117,9 +133,9 @@ if __name__ == "__main__":
         H = int(crosswalkCam.get(4))  # float
 
     # Get ROIs from cross and road cam
-    crossContourUp = contour.select_points_in_frame(crosswalkCam, 'crossContourUp', is_jetson=is_jetson)
-    crossContourDown = contour.select_points_in_frame(crosswalkCam, 'crossContourDown', is_jetson=is_jetson)
-    roadContour = contour.select_points_in_frame(roadCam, 'roadContour', is_jetson=is_jetson)
+    crossContourUp   = contour.select_points_in_frame(crosswalkCam, 'crossContourUp',   is_jetson=is_jetson, is_interactive=INTERACTIVE_SETUP)
+    crossContourDown = contour.select_points_in_frame(crosswalkCam, 'crossContourDown', is_jetson=is_jetson, is_interactive=INTERACTIVE_SETUP)
+    roadContour      = contour.select_points_in_frame(     roadCam, 'roadContour',      is_jetson=is_jetson, is_interactive=INTERACTIVE_SETUP)
 
     # ---------------------------------------
     #

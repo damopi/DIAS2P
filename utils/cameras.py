@@ -71,7 +71,7 @@ def grab_frame_and_ask(cam, question):
             return False
 
 
-def get_road_and_crosswalk_indexes():
+def get_road_and_crosswalk_indexes(doNotAsk=False, DEFAULT_VALUES=(0,1)):
     
     """
     Take the available cameras and present frames of them
@@ -80,6 +80,8 @@ def get_road_and_crosswalk_indexes():
     :return: road cam index and crosswalkcam index
     """
     
+    if doNotAsk:
+        return DEFAULT_VALUES
     # Desired number of cameras == 2
     cams_n = 2
     # Get first two cameras indexes available
