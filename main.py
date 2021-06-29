@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import jetson.inference
 import jetson.utils
 import cv2
@@ -10,6 +12,33 @@ from trackers.bboxssd import BBox
 from trackers.bboxssdtracker import BBoxTracker
 import platform
 import numpy as np
+import signal
+import datetime
+
+# check if running on jetson
+is_jetson = utils.is_jetson_platform()
+
+def finalize_jetson(sgn, frame):
+  gpios.warning_OFF()
+  gpios.deactivate_jetson_board()
+  print("Ending process because of signal %d" % sgn) 
+  sys.exit(0)
+
+def finalize_process(sgn, frame):
+  print("Ending process because of signal %d" % sgn) 
+  sys.exit(0)
+
+def make_handler(sgn, is_jetson):
+  handler = finalize_jetson if is_jetson else finalize_process
+  signal.signal(sgn, handler)
+
+isdaemon = "DAEMONIZE_ME" in os.environ and os.environ["DAEMONIZE_ME"] in ["on", "1", "true"]
+
+if isdaemon:
+  import systemd.daemon
+  make_handler(signal.SIGABRT, is_jetson)
+#else:
+#  make_handler(signal.SIGINT, is_jetson)
 
 
 if __name__ == "__main__":
@@ -22,15 +51,15 @@ if __name__ == "__main__":
     
     # Show live results
     # when production set this to False as it consume resources
-    SHOW_IF_NOT_JETSON = True
+    SHOW_IF_NOT_JETSON = False # True
     VIDEO = False
-    SHOW_INPUTS_IF_JETSON = True
+    SHOW_INPUTS_IF_JETSON = False
     # tell the script if it can spawn windows to show images
-    RUNNING_ON_DESKTOP = True
+    RUNNING_ON_DESKTOP = False #True
     # right now, this only works in *NIX, so set to False if you're on Windows/MAC
     CHECK_IF_RUNNING_ON_DESKTOP = True
     # the setup is interactive by default
-    INTERACTIVE_SETUP = True
+    INTERACTIVE_SETUP = False #True
     NON_INTERACTIVE_IDX_CAMERA_ROAD      = 1
     NON_INTERACTIVE_IDX_CAMERA_CROSSWALK = 2
 
@@ -39,7 +68,7 @@ if __name__ == "__main__":
     overlay = "box,labels,conf"
     threshold = 0.7
     W, H = (640, 480)
-    net = jetson.inference.detectNet(arch, sys.argv, threshold)
+    net = jetson.inference.detectNet(arch, sys.argv+["--log-level=error"], threshold)
     
     if CHECK_IF_RUNNING_ON_DESKTOP:
       RUNNING_ON_DESKTOP = ('DISPLAY' in os.environ) and (os.environ['DISPLAY']!='')
@@ -71,8 +100,6 @@ if __name__ == "__main__":
     ped_tracker_down = BBoxTracker(15)
     veh_tracker = BBoxTracker(15)
     
-    # check if running on jetson
-    is_jetson = utils.is_jetson_platform()
     # Activate Board
     if is_jetson: gpios.activate_jetson_board()
     
@@ -142,7 +169,12 @@ if __name__ == "__main__":
     #      VIDEO PROCESSING MAIN LOOP
     #
     # ---------------------------------------
-    
+
+    if isdaemon:
+      systemd.daemon.notify('READY=1')
+      timestart = datetime.datetime.now()
+      minute_count = -1
+
     while True:
         
         start_time = time.time()  # start time of the loop
@@ -253,6 +285,7 @@ if __name__ == "__main__":
             if is_jetson:
                 # Activate Warnings
                 gpios.warning_ON()
+                print("ACTIVATE WARNINGS!!!!!")
                 # Deactivate Warnings after DELAY_TIME
                 scheduler.cancel()
                 scheduler = Timer(DELAY_TIME, gpios.warning_OFF, ())
@@ -296,22 +329,30 @@ if __name__ == "__main__":
             cv2.imshow("Crosswalk CAM", crosswalkFrame)
             cv2.imshow("Road CAM", roadFrame)
         
-        # SHOW DATA IN CONSOLE
-        info.print_console(consoleConfig)
-        
         # ----------------------------------
         #
         #           PROGRAM END
         #
         # ----------------------------------
-        
-        # Quit program pressing 'q'
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord("q"):
-            # free GPIOs before quit
-            if is_jetson:
-                gpios.warning_OFF()
-                gpios.deactivate_jetson_board()
-            # close any open windows
-            cv2.destroyAllWindows()
-            break
+
+        if isdaemon:
+          time_delta = datetime.datetime.now() - timestart
+          #print(time_delta)
+          systemd.daemon.notify('WATCHDOG=1')
+          delta_minutes = time_delta.seconds // 60
+          if delta_minutes!=minute_count:
+            info.print_console(consoleConfig)
+            minute_count = delta_minutes
+        else:
+          # SHOW DATA IN CONSOLE
+          info.print_console(consoleConfig)
+          # Quit program pressing 'q'
+          key = cv2.waitKey(1) & 0xFF
+          if key == ord("q"):
+              # free GPIOs before quit
+              if is_jetson:
+                  gpios.warning_OFF()
+                  gpios.deactivate_jetson_board()
+              # close any open windows
+              cv2.destroyAllWindows()
+              break

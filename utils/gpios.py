@@ -53,6 +53,7 @@ def warning_ON(output_pin=18):
     :param output_pin: int, GPIO position
     """
     
+    print("WARNING GOING ON")
     GPIO.output(output_pin, GPIO.HIGH)
 
 
@@ -63,6 +64,7 @@ def warning_OFF(output_pin=18):
     :param output_pin: int, GPIO position
     """
     
+    print("WARNING GOING OFF")
     GPIO.output(output_pin, GPIO.LOW)
 
 

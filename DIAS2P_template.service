@@ -1,0 +1,25 @@
+# FIRST, FILL OUT ALL CONFIG VALUES IN THIS FILE (SEARCH $)
+# Then, rename this file to DIAS2P.service and copy it to /etc/systemd/system/
+
+# Using graphical.target for everything is a dirty hack to avoid dealing with the startup graph. So go and sue me...
+
+[Unit]
+Description=DIAS2P service
+Wants=graphical.target
+After=graphical.target
+
+[Service]
+Type=notify
+NotifyAccess=main
+User=$USER
+Group=$GROUP
+WorkingDirectory=$FULL_PATH_TO_SCRIPT_FOLDER
+Environment="DAEMONIZE_ME=on"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/usr/bin/python3 $FULL_PATH_TO_SCRIPT 
+WatchdogSec=30s
+Restart=always
+
+[Install]
+WantedBy=graphical.target
+
