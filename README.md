@@ -25,3 +25,25 @@ tracking basado en superficie que monitorea la posición de cada objeto dentro d
 ![Track_01.png](images/Machine%20Learning/Track_01.png)
 ![Track_02.png](images/Machine%20Learning/Track_02.png)
 
+## Setup
+
+The app can be run from a desktop manager; then you can dynamically configure
+road and crosswalk cameras and areas within the cameras' field of view, before
+actually starting the inference and the warning logic.
+
+This is, of course, quite inconvenient for unattended usage, because you NEED
+to be able to run and forget. To this end, the configuration can be saved (to
+*.npy files for areas within cameras' FOV and configuration values for camera
+indexes within main.py). You can then configure this app as a systemd service
+that will be started automatically upon reboot, and restarted if crashed.
+
+A mild annoyance: our current protetypes use what I suppose are dirt-cheap USB
+cameras whose ID_SERIAL numbers are all the same (not seriously, thats DUMB),
+so we have NO WAY to configure udev so each index corresponds unequivocally
+to each camera. Even worse: the camera index assignment varies across reboots,
+sometimes even mixing up the indexes of the onboard camera and the other USB
+cameras. Unless we use cameras with different ID_SERIAL strings, THERE IS NO
+WAY TO LEAVE THIS FULLY UNATTENDED. All that can be done is to mitigate the
+issues about app crashes.
+
+
