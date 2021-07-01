@@ -46,4 +46,7 @@ cameras. Unless we use cameras with different ID_SERIAL strings, THERE IS NO
 WAY TO LEAVE THIS FULLY UNATTENDED. All that can be done is to mitigate the
 issues about app crashes.
 
+Currently, if started as a systemd daemon, the app will save snapshots from the
+cameras at startup with a fixed name, and will save additional snapshots everytime
+a file named "gimmeit" is created in its working directory.
 

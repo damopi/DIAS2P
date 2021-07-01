@@ -5,6 +5,7 @@ import jetson.utils
 import cv2
 import sys
 import os
+import os.path
 import time
 from threading import Timer
 from utils import utils, classes, gpios, cameras, info, tracking, contour
@@ -40,6 +41,9 @@ if isdaemon:
 #else:
 #  make_handler(signal.SIGINT, is_jetson)
 
+# do "touch /home/username/Desktop/DIAS2P/gimmeit" to get snapshots from both cameras
+saveFilesOnDemand = isdaemon and is_jetson
+saveFileThisTime  = False
 
 if __name__ == "__main__":
     
@@ -178,6 +182,14 @@ if __name__ == "__main__":
     while True:
         
         start_time = time.time()  # start time of the loop
+
+        if saveFilesOnDemand and os.path.isfile('gimmeit'):
+          try:
+            os.remove('gimmeit')
+          except:
+            pass
+          saveFileThisTime = True
+
  
         # ---------------------------------------
         #
@@ -187,23 +199,29 @@ if __name__ == "__main__":
 
         # if we are on Jetson use jetson inference
         if is_jetson:
- 
+            doZeroCopy = SHOW_INPUTS_IF_JETSON or saveFileThisTime
             # get frame from crosswalk and detect
             #print('CAPTURING SNAPSHOT FROM CROSSWALK CAMERA')
-            crosswalkMalloc, _, _ = crosswalkCam.CaptureRGBA(zeroCopy=SHOW_INPUTS_IF_JETSON)
+            crosswalkMalloc, _, _ = crosswalkCam.CaptureRGBA(zeroCopy=doZeroCopy)
             # get frame from road and detect
             #print('CAPTURING SNAPSHOT FROM ROAD CAMERA')
-            roadMalloc, _, _ = roadCam.CaptureRGBA(zeroCopy=SHOW_INPUTS_IF_JETSON)
+            roadMalloc, _, _ = roadCam.CaptureRGBA(zeroCopy=doZeroCopy)
             #print('FINISHED CAPTURING SNAPSHOTS')
 
-            if SHOW_INPUTS_IF_JETSON:
+            if SHOW_INPUTS_IF_JETSON or saveFileThisTime:
                 jetson.utils.cudaDeviceSynchronize()
                 crosswalk_numpy_img = jetson.utils.cudaToNumpy(crosswalkMalloc, W, H, 4)
                 road_numpy_img = jetson.utils.cudaToNumpy(roadMalloc, W, H, 4)
                 crosswalk_numpy_img = cv2.cvtColor(crosswalk_numpy_img.astype(np.uint8), cv2.COLOR_RGBA2BGR)
                 road_numpy_img = cv2.cvtColor(road_numpy_img.astype(np.uint8), cv2.COLOR_RGBA2BGR)
-                cv2.imshow("crosswalk", crosswalk_numpy_img)
-                cv2.imshow("road", road_numpy_img)
+                if SHOW_INPUTS_IF_JETSON:
+                  cv2.imshow("crosswalk", crosswalk_numpy_img)
+                  cv2.imshow("road", road_numpy_img)
+                if saveFileThisTime:
+                  saveFileThisTime = False
+                  stamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M")
+                  cv2.imwrite('crosswalk.%s.jpg' % stamp, crosswalk_numpy_img)
+                  cv2.imwrite('road.%s.jpg' % stamp, road_numpy_img)
 
             #print('DETECTING PEDESTRIANS')
             pedestrianDetections = net.Detect(crosswalkMalloc, W, H, overlay)
