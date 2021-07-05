@@ -119,7 +119,7 @@ def grab_frame_and_ask(cam, question):
             return False
 
 
-def get_road_and_crosswalk_indexes(doNotAsk=False, DEFAULT_VALUES=(0,1)):
+def get_road_and_crosswalk_indexes(doNotAsk=False, ALL_CAM_IDXS=[0,1,2], DEFAULT_VALUES=(0,1)):
     
     """
     Take the available cameras and present frames of them
@@ -129,7 +129,7 @@ def get_road_and_crosswalk_indexes(doNotAsk=False, DEFAULT_VALUES=(0,1)):
     """
     
     if doNotAsk:
-        return correct_automatic_camera_indexes(*DEFAULT_VALUES)
+        return correct_automatic_camera_indexes(*DEFAULT_VALUES, ALL_CAM_IDXS=ALL_CAM_IDXS)
     # Desired number of cameras == 2
     cams_n = 2
     # Get first two cameras indexes available
