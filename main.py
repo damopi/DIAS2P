@@ -45,6 +45,10 @@ if isdaemon:
 saveFilesOnDemand = isdaemon and is_jetson
 saveFileThisTime  = False
 
+recordDetections = True
+detectionsLog = 'detections.log'
+recordThisTime = False
+
 if __name__ == "__main__":
     
     # ---------------------------------------
@@ -70,6 +74,9 @@ if __name__ == "__main__":
     NON_INTERACTIVE_IDX_CAMERA_CROSSWALK = 2
     ONBOARD_CAMERA = 0
     ALL_CAM_IDXS=[ONBOARD_CAMERA, NON_INTERACTIVE_IDX_CAMERA_ROAD, NON_INTERACTIVE_IDX_CAMERA_CROSSWALK]
+
+    if recordDetections:
+      detectfile = open(detectionsLog, 'at')
 
     # load the object detection network
     arch = "ssd-mobilenet-v2"
@@ -238,7 +245,15 @@ if __name__ == "__main__":
             #print('DETECTING VEHICLES')
             vehicleDetections = net.Detect(roadMalloc, W, H, overlay)
             #print('FINISHED DETECTING VEHICLES')
-  
+            if recordDetections and (len(pedestrianDetections)>0 or len(vehicleDetections)>0):
+              recordThisTime = True
+              detectTimestamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%f")
+              detectfile.write("\n----------\n-- DETECTIONS AT %s: %d pedestrians, %d vehicles\n" % (detectTimestamp, len(pedestrianDetections), len(vehicleDetections)))
+              for d in pedestrianDetections:
+                detectfile.write("%s\n" % str(d))
+              for d in vehicleDetections:
+                detectfile.write("%s\n" % str(d))
+
         # If we are NOT on jetson use CV2
         else:
             # Check if more frames are available
@@ -314,6 +329,9 @@ if __name__ == "__main__":
                 # Activate Warnings
                 gpios.warning_ON()
                 print("ACTIVATE WARNINGS!!!!!")
+                if recordDetections:
+                  recordThisTime = True
+                  detectfile.write("\n  -- WARNING ACTIVATED!!!!  --\n")
                 # Deactivate Warnings after DELAY_TIME
                 scheduler.cancel()
                 scheduler = Timer(DELAY_TIME, gpios.warning_OFF, ())
@@ -325,7 +343,10 @@ if __name__ == "__main__":
                 scheduler.cancel()  # Cancel every possible Scheduler Thread
                 scheduler = Timer(DELAY_TIME, gpios.security_OFF, ())  # Restart
                 scheduler.start()
-        
+
+        if recordThisTime:
+          recordThisTime = False
+          detectfile.flush()
         # ---------------------------------------
         #
         #           SHOWING PROGRAM INFO
@@ -377,6 +398,8 @@ if __name__ == "__main__":
           # Quit program pressing 'q'
           key = cv2.waitKey(1) & 0xFF
           if key == ord("q"):
+              if recordDetections:
+                detectfile.close()
               # free GPIOs before quit
               if is_jetson:
                   gpios.warning_OFF()
