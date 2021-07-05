@@ -1,0 +1,26 @@
+# FIRST, FILL OUT ALL CONFIG VALUES IN THIS FILE (SEARCH $)
+# Then, rename this file to recordVideos.service and copy it to /etc/systemd/system/
+
+# Using graphical.target for everything is a dirty hack to avoid dealing with the startup graph. So go and sue me...
+
+# Automount is fubar in vanilla Ubuntu Bionic. See and apply https://unix.stackexchange.com/questions/330094/udev-rule-to-mount-disk-does-not-work
+
+[Unit]
+Description=service to record videos from all non-tegra cameras (they are expected to be standard USB cameras)
+Wants=graphical.target
+After=graphical.target
+
+[Service]
+Type=simple
+#NotifyAccess=main
+KillMode=control-group
+User=$USER
+Group=$GROUP
+WorkingDirectory=$FULL_PATH_TO_SCRIPT_FOLDER
+ExecStart=/usr/bin/python3 $FULL_PATH_TO_SCRIPT
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target
+
