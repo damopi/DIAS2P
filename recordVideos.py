@@ -38,8 +38,12 @@ def run_script():
     print("COMMAND FOR %s: %s" % (idx, com))
     p=subprocess.Popen(com, shell=True)
     processes.append(p)
+  print("All children launched")
   for p in processes:
+    print("Start Waiting for one process")
     p.wait()
+    print("End Waiting for one process")
+  print("Ending script")
 
 #let's sleep 60 seconds because of automount issues at boot time
 time.sleep(60)
