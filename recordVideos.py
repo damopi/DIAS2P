@@ -3,6 +3,7 @@
 import time
 import subprocess
 import os
+import datetime
 
 def get_actual_video_indexes():
   output = subprocess.check_output('ls /dev/video*', shell=True)
@@ -26,10 +27,14 @@ def run_script():
   idxs = get_nontegra_cameras()
   processes = []
   prefix = ''
-  command =  "ffmpeg -hide_banner -loglevel error -nostdin -video_size 640x480 -input_format yuyv422 -i %s -c:v libx264 -preset veryfast -crf 22 -r 15 -f segment -segment_time 3600 -strftime 1 -reset_timestamps 1 '%sdevice%d-%%Y.%%m.%%d.%%H.%%M.mp4'"
+  timestamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M")
+  prefix = prefix+timestamp+"/"
+  os.makedirs(prefix, exist_ok=True)
+  command = "gst-launch-1.0 v4l2src device=%s ! 'video/x-raw, width=(int)640, height=(int)480, format=YUY2' ! videoconvert ! 'video/x-raw,format=(string)NV12,width=640,height=480,framerate=(fraction)30/1' ! queue ! x264enc pass=5 quantizer=22 speed-preset=3 ! splitmuxsink max-size-time=60000000000 async-finalize=true location=%sdevice%d_%s_%%05d.mp4"
+  #command =  "ffmpeg -hide_banner -loglevel error -nostdin -video_size 640x480 -input_format yuyv422 -i %s -c:v libx264 -preset veryfast -crf 22 -r 15 -f segment -segment_time 60 -strftime 1 -reset_timestamps 1 '%sdevice%d-%%Y.%%m.%%d.%%H.%%M.mp4'"
   for idx in idxs:
     num = int(idx[-1])
-    com = command % (idx,prefix,num)
+    com = command % (idx,prefix,num, timestamp)
     print("COMMAND FOR %s: %s" % (idx, com))
     p=subprocess.Popen(com, shell=True)
     processes.append(p)
