@@ -31,7 +31,7 @@ def get_available_cam_indexes(max_cameras=2):
     
     return indexes
 
-def correct_automatic_camera_indexes(road_cam_old, crosswalk_cam_old, ALL_CAM_IDXS=[0,1,2], saveSnapshots=True):
+def correct_automatic_camera_indexes(road_cam_old, crosswalk_cam_old, ALL_CAM_IDXS=[0,1,2], saveSnapshots=False):
   onboard_cam_driver = 'tegra-video'
   is_onboard = {}
   onboard_idxs = []
