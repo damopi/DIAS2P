@@ -216,7 +216,7 @@ if __name__ == "__main__":
 
         # if we are on Jetson use jetson inference
         if is_jetson:
-            doZeroCopy = SHOW_INPUTS_IF_JETSON or saveFileThisTime
+            doZeroCopy = recordDetections or SHOW_INPUTS_IF_JETSON or saveFileThisTime
             # get frame from crosswalk and detect
             #print('CAPTURING SNAPSHOT FROM CROSSWALK CAMERA')
             crosswalkMalloc, _, _ = crosswalkCam.CaptureRGBA(zeroCopy=doZeroCopy)
@@ -225,7 +225,7 @@ if __name__ == "__main__":
             roadMalloc, _, _ = roadCam.CaptureRGBA(zeroCopy=doZeroCopy)
             #print('FINISHED CAPTURING SNAPSHOTS')
 
-            if SHOW_INPUTS_IF_JETSON or saveFileThisTime:
+            if doZeroCopy:
                 jetson.utils.cudaDeviceSynchronize()
                 crosswalk_numpy_img = jetson.utils.cudaToNumpy(crosswalkMalloc, W, H, 4)
                 road_numpy_img = jetson.utils.cudaToNumpy(roadMalloc, W, H, 4)
@@ -248,6 +248,8 @@ if __name__ == "__main__":
             if recordDetections and (len(pedestrianDetections)>0 or len(vehicleDetections)>0):
               recordThisTime = True
               detectTimestamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%f")
+              cv2.imwrite('detect.crosswalk.%s.jpg' % detectTimestamp, crosswalk_numpy_img)
+              cv2.imwrite('detect.road.%s.jpg' % detectTimestamp, road_numpy_img)
               detectfile.write("\n----------\n-- DETECTIONS AT %s: %d pedestrians, %d vehicles\n" % (detectTimestamp, len(pedestrianDetections), len(vehicleDetections)))
               for d in pedestrianDetections:
                 detectfile.write("%s\n" % str(d))
