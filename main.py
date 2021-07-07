@@ -42,7 +42,7 @@ if isdaemon:
 #  make_handler(signal.SIGINT, is_jetson)
 
 # do "touch /home/username/Desktop/DIAS2P/gimmeit" to get snapshots from both cameras
-saveFilesOnDemand = isdaemon and is_jetson
+saveFilesOnDemand = is_jetson
 saveFileThisTime  = False
 
 recordDetections = True
