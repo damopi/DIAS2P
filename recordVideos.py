@@ -3,7 +3,6 @@
 import time
 import subprocess
 import os
-from utils import cameras
 
 def get_actual_video_indexes():
   output = subprocess.check_output('ls /dev/video*', shell=True)
