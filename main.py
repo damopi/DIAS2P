@@ -245,16 +245,6 @@ if __name__ == "__main__":
             #print('DETECTING VEHICLES')
             vehicleDetections = net.Detect(roadMalloc, W, H, overlay)
             #print('FINISHED DETECTING VEHICLES')
-            if recordDetections and (len(pedestrianDetections)>0 or len(vehicleDetections)>0):
-              recordThisTime = True
-              detectTimestamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%f")
-              cv2.imwrite('detect.crosswalk.%s.jpg' % detectTimestamp, crosswalk_numpy_img)
-              cv2.imwrite('detect.road.%s.jpg' % detectTimestamp, road_numpy_img)
-              detectfile.write("\n----------\n-- DETECTIONS AT %s: %d pedestrians, %d vehicles\n" % (detectTimestamp, len(pedestrianDetections), len(vehicleDetections)))
-              for d in pedestrianDetections:
-                detectfile.write("%s\n" % str(d))
-              for d in vehicleDetections:
-                detectfile.write("%s\n" % str(d))
 
         # If we are NOT on jetson use CV2
         else:
@@ -289,27 +279,55 @@ if __name__ == "__main__":
         ped_up_bboxes = []
         ped_down_bboxes = []
         veh_bboxes = []
-        
+        ped_up_idxs = []
+        ped_down_idxs = []
+        veh_idxs = []
+
         # Convert Crosswalk Detections to Bbox object
         # filter detections if recognised as pedestrians
         # add to pedestrian list of bboxes
+        ped_idx = 0
         for detection in pedestrianDetections:
             bbox = BBox(detection)
             if bbox.name in pedestrian_classes:
+                recordThisTime = True
                 if tracking.is_point_in_contour(crossContourUp, bbox.center):
                     ped_up_bboxes.append(bbox)
+                    ped_up_idxs.append(ped_idx)
                 if tracking.is_point_in_contour(crossContourDown, bbox.center):
                     ped_down_bboxes.append(bbox)
-        
+                    ped_down_idxs.append(ped_idx)
+            ped_idx += 1
+
         # Convert Road Detections to Bbox object
         # filter detections if recognised as vehicles
         # add to vehicle list of bboxes
+        vec_idx = 0
         for detection in vehicleDetections:
             bbox = BBox(detection)
             is_bbox_in_contour = tracking.is_point_in_contour(roadContour, bbox.center)
             if bbox.name in vehicle_classes and is_bbox_in_contour:
+                recordThisTime = True
                 veh_bboxes.append(bbox)
-        
+                veh_idxs.append(vec_idx)
+            vec_idx += 1
+
+        if recordThisTime:
+          detectTimestamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%f")
+          cv2.imwrite('detect.crosswalk.%s.jpg' % detectTimestamp, crosswalk_numpy_img)
+          cv2.imwrite('detect.road.%s.jpg' % detectTimestamp, road_numpy_img)
+          detectfile.write("\n----------\n-- RAW DETECTIONS AT %s: %d pedestrians, %d vehicles\n" % (detectTimestamp, len(pedestrianDetections), len(vehicleDetections)))
+          for d in pedestrianDetections:
+            detectfile.write("%s\n" % str(d))
+          for d in vehicleDetections:
+            detectfile.write("%s\n" % str(d))
+          try:
+            detectfile.write("-- PED UP   (INDEXES IN PEDESTRIAN DETECTIONS): %s\n" % str(ped_up_idxs))
+            detectfile.write("-- PED DOWN (INDEXES IN PEDESTRIAN DETECTIONS): %s\n" % str(ped_down_idxs))
+            detectfile.write("-- VEH      (INDEXES IN PEDESTRIAN DETECTIONS): %s\n" % str(veh_idxs))
+          except:
+            pass
+
         # Relate previous detections to new ones
         # updating trackers
         pedestriansUp = ped_tracker_up.update(ped_up_bboxes)
