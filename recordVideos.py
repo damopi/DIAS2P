@@ -5,6 +5,8 @@ import subprocess
 import os
 import datetime
 
+isdaemon = "DAEMONIZE_ME" in os.environ and os.environ["DAEMONIZE_ME"] in ["on", "1", "true"]
+
 def get_actual_video_indexes():
   output = subprocess.check_output('ls /dev/video*', shell=True)
   devs = output.decode().split()
@@ -40,6 +42,14 @@ def run_script():
     p=subprocess.Popen(com, shell=True)
     processes.append(p)
   print("All children launched")
+  if isdaemon:
+    numFiles1 = len(os.listdir(prefix))
+    while True:
+      time.sleep(600)
+      numFiles2 = len(os.listdir(prefix))
+      if numFiles1==numFiles2:
+        os.system('sudo reboot')
+      numFiles1 = numFiles2
   for p in processes:
     print("Start Waiting for one process")
     p.wait()
