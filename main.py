@@ -49,6 +49,10 @@ recordDetections = True
 detectionsLog = 'detections.log'
 recordThisTime = False
 
+recordAllFrames = False
+prefixFrames = ''
+numRecordsToFragment = 5000
+
 if __name__ == "__main__":
     
     # ---------------------------------------
@@ -75,8 +79,19 @@ if __name__ == "__main__":
     ONBOARD_CAMERA = 0
     ALL_CAM_IDXS=[ONBOARD_CAMERA, NON_INTERACTIVE_IDX_CAMERA_ROAD, NON_INTERACTIVE_IDX_CAMERA_CROSSWALK]
 
+    if not recordDetections:
+      recordAllFrames = False
     if recordDetections:
       detectfile = open(detectionsLog, 'at')
+      if recordAllFrames:
+        currentFile = 0
+        currentSubFolder = 0
+        currentFolder = 0
+        parentFolder = prefixFrames+datetime.datetime.now().strftime("%Y.%m.%d.%H.%M")
+        os.mkdir(parentFolder)
+        os.mkdir("%s/%04d" % (parentFolder, currentFolder))
+        currentFolderStr = "%s/%04d/%04d/" % (parentFolder, currentFolder, currentSubFolder)
+        os.mkdir(currentFolderStr)
 
     # load the object detection network
     arch = "ssd-mobilenet-v2"
@@ -312,10 +327,26 @@ if __name__ == "__main__":
                 veh_idxs.append(vec_idx)
             vec_idx += 1
 
-        if recordThisTime:
+
+        if recordThisTime or recordAllFrames:
           detectTimestamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%f")
+        if recordAllFrames:
+          cv2.imwrite('%scrosswalk.%s.jpg' % (currentFolderStr, detectTimestamp), crosswalk_numpy_img)
+          cv2.imwrite('%sroad.%s.jpg' % (currentFolderStr, detectTimestamp), road_numpy_img)
+          currentFile += 1
+          if currentFile >= numRecordsToFragment:
+            currentFile = 0
+            currentSubFolder += 1
+            if currentSubFolder >= numRecordsToFragment:
+              currentSubFolder = 0
+              currentFolder += 1
+              os.mkdir("%s/%04d" % (parentFolder, currentFolder))
+            currentFolderStr = "%s/%04d/%04d/" % (parentFodfer, currentFolder, currentSubFolder)
+            os.mkdir(currentFolderStr)
+        if recordThisTime and not recordAllFrames:
           cv2.imwrite('detect.crosswalk.%s.jpg' % detectTimestamp, crosswalk_numpy_img)
           cv2.imwrite('detect.road.%s.jpg' % detectTimestamp, road_numpy_img)
+        if recordThisTime:
           detectfile.write("\n----------\n-- RAW DETECTIONS AT %s: %d pedestrians, %d vehicles\n" % (detectTimestamp, len(pedestrianDetections), len(vehicleDetections)))
           for d in pedestrianDetections:
             detectfile.write("%s\n" % str(d))
