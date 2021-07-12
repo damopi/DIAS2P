@@ -74,10 +74,16 @@ if __name__ == "__main__":
     INTERACTIVE_SETUP = False #True
     # IF YOU HAVE PROBLEMS OPENING VIDEO, VIDEO DEVICE FILES MIGHT HAVE NONCONVENTIONAL INDEXES!
     # IN THAT CASE, CHECK THE OUTPUT OF ls /dev/video* AND ADJUST THESE INDEXES ACCORDINGLY!!!!
-    NON_INTERACTIVE_IDX_CAMERA_ROAD      = 1
-    NON_INTERACTIVE_IDX_CAMERA_CROSSWALK = 2
-    ONBOARD_CAMERA = 0
-    ALL_CAM_IDXS=[ONBOARD_CAMERA, NON_INTERACTIVE_IDX_CAMERA_ROAD, NON_INTERACTIVE_IDX_CAMERA_CROSSWALK]
+    videoConfig = {
+      'nonInteractive':       not INTERACTIVE_SETUP,
+      'byIndexRoad':          2,
+      'byIndexCrosswalk':     1,
+      'byIndexOnboardCamera': 0,
+      'tryByPath':            True,
+      'byPathRoad':      '/dev/v4l/by-path/platform-3530000.xhci-usb-0:2.3:1.0-video-index0',
+      'byPathCrosswalk': '/dev/v4l/by-path/platform-3530000.xhci-usb-0:2.2:1.0-video-index0'
+    }
+    videoConfig['byIndexAllCams'] = [videoConfig['byIndexOnboardCamera'], videoConfig['byIndexRoad'], videoConfig['byIndexCrosswalk']]
 
     if not recordDetections:
       recordAllFrames = False
@@ -167,12 +173,7 @@ if __name__ == "__main__":
         print("Is jetson")
         print('[*] Starting camera...')
         # Select Road and Crosswalk cameras
-        road_idx, crosswalk_idx = cameras.get_road_and_crosswalk_indexes(
-          doNotAsk=not INTERACTIVE_SETUP,
-          ALL_CAM_IDXS=ALL_CAM_IDXS,
-          DEFAULT_VALUES=(NON_INTERACTIVE_IDX_CAMERA_ROAD, NON_INTERACTIVE_IDX_CAMERA_CROSSWALK))
-        road_idx = "/dev/video" + str(road_idx)
-        crosswalk_idx = "/dev/video" + str(crosswalk_idx)
+        road_idx, crosswalk_idx = cameras.get_road_and_crosswalk_devices(videoConfig)
         #print('STARTING CROSSWALK CAMERA')
         crosswalkCam = jetson.utils.gstCamera(W, H, crosswalk_idx)
         #print('STARTING ROAD CAMERA')
@@ -185,10 +186,7 @@ if __name__ == "__main__":
         print('[*] Starting camera...')
         
         # Select Road and Crosswalk cameras
-        road_idx, crosswalk_idx = cameras.get_road_and_crosswalk_indexes(
-          doNotAsk=not INTERACTIVE_SETUP,
-          ALL_CAM_IDXS=ALL_CAM_IDXS,
-          DEFAULT_VALUES=(NON_INTERACTIVE_IDX_CAMERA_ROAD, NON_INTERACTIVE_IDX_CAMERA_CROSSWALK))
+        road_idx, crosswalk_idx = cameras.get_road_and_crosswalk_devices(videoConfig)
         crosswalkCam = cv2.VideoCapture(crosswalk_idx)
         roadCam = cv2.VideoCapture(road_idx)
         # Override initial width and height

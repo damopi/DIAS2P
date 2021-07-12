@@ -2,6 +2,7 @@ import cv2
 import warnings
 import subprocess
 import sys
+import os.path
 
 def get_available_cam_indexes(max_cameras=2):
     
@@ -31,9 +32,17 @@ def get_available_cam_indexes(max_cameras=2):
     
     return indexes
 
-def correct_automatic_camera_indexes(road_cam_old, crosswalk_cam_old, ALL_CAM_IDXS=[0,1,2], saveSnapshots=False):
+def correct_automatic_camera_indexes(videoConfig):
+  # by-path names should be consistent across reboots
+  if videoConfig['tryByPath']:
+    if os.path.islink(videoConfig['byPathRoad']) and os.path.islink(videoConfig['byPathCrosswalk']):
+      return (os.path.realpath(videoConfig['byPathRoad']), os.path.realpath(videoConfig['byPathCrosswalk']))
+  # device indexes are not constant across reboots; detect onboard camera index in an effort to not fail immediately on non-interactive start-ups
+  road_cam_old       = videoConfig['byIndexRoad']
+  crosswalk_cam_old  = videoConfig['byIndexCrosswalk']
+  ALL_CAM_IDXS       = videoConfig['byIndexAllCams']
   onboard_cam_driver = 'tegra-video'
-  is_onboard = {}
+  is_onboard   = {}
   onboard_idxs = []
   neither_road_nor_crosswalk = []
   for idx in ALL_CAM_IDXS:
@@ -62,15 +71,7 @@ def correct_automatic_camera_indexes(road_cam_old, crosswalk_cam_old, ALL_CAM_ID
   print("AUTOMATIC CAMERA INDEX GUESSES: ROAD OLD IDX %d NEW IDX %d / CROSSWALK OLD IDX %d NEW IDX %d"
         % (road_cam_old, road_cam_new, crosswalk_cam_old, crosswalk_cam_new))
 
-  if saveSnapshots:
-    for idx, name in [(road_cam_new, 'road'), (crosswalk_cam_new, 'crosswalk')]:
-      output=subprocess.check_output([
-             'ffmpeg', '-y', '-hide_banner', '-loglevel', 'error',
-             '-f', 'video4linux2', '-s', '640x480', '-i',
-             '/dev/video%d' % idx, '-ss', '0:0:2', '-frames', '1',
-             'start_snapshot_camera_%s.jpg' % name])
-
-  return road_cam_new, crosswalk_cam_new
+  return '/dev/video%d' % road_cam_new, '/dev/video%d' % crosswalk_cam_new
 
 def get_cams_from_indexes(indexes):
     
@@ -119,7 +120,7 @@ def grab_frame_and_ask(cam, question):
             return False
 
 
-def get_road_and_crosswalk_indexes(doNotAsk=False, ALL_CAM_IDXS=[0,1,2], DEFAULT_VALUES=(0,1)):
+def get_road_and_crosswalk_devices(videoConfig):
     
     """
     Take the available cameras and present frames of them
@@ -128,8 +129,8 @@ def get_road_and_crosswalk_indexes(doNotAsk=False, ALL_CAM_IDXS=[0,1,2], DEFAULT
     :return: road cam index and crosswalkcam index
     """
     
-    if doNotAsk:
-        return correct_automatic_camera_indexes(*DEFAULT_VALUES, ALL_CAM_IDXS=ALL_CAM_IDXS)
+    if videoConfig['nonInteractive']:
+        return correct_automatic_camera_indexes(videoConfig)
     # Desired number of cameras == 2
     cams_n = 2
     # Get first two cameras indexes available
@@ -158,11 +159,11 @@ def get_road_and_crosswalk_indexes(doNotAsk=False, ALL_CAM_IDXS=[0,1,2], DEFAULT
     
     print('[*] CrosswalkCam index:', crosswalk_cam_idx, '[*]')
     print('[*] RoadCam index:', road_cam_idx, '[*]')
-    
+
     # Return indexes
-    return road_cam_idx, crosswalk_cam_idx
-    
-    
+    return '/dev/video%d' % road_cam_idx, '/dev/video%d' % crosswalk_cam_idx
+
+
 def set_camera(camera_width=320, camera_height=240, index_cam=0):
     
     """
