@@ -57,5 +57,8 @@ def run_script():
   print("Ending script")
 
 #let's sleep 60 seconds because of automount issues at boot time
-time.sleep(60)
+if isdaemon:
+  time.sleep(20)
+else:
+  time.sleep(1)
 run_script()
