@@ -48,13 +48,16 @@ if isdaemon:
 saveFilesOnDemand = is_jetson
 saveFileThisTime  = False
 
-recordDetections = True
-detectionsLog = 'detections.log'
-recordThisTime = False
-
-recordAllFrames = False
-prefixFrames = ''
+recordAllFrames = True
+prefixFrames = '/media/tegra/Maxtor/'
 numRecordsToFragment = 5000
+
+recordDetections = True
+recordThisTime = False
+detectionsLog = prefixFrames+'detections.log'
+
+prefixOneOffSnapshots    = prefixFrames+'snapshot/'
+prefixDetectionSnapshots = prefixFrames+'detect/'
 
 if __name__ == "__main__":
     
@@ -253,8 +256,8 @@ if __name__ == "__main__":
                 if saveFileThisTime:
                   saveFileThisTime = False
                   stamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M")
-                  cv2.imwrite('crosswalk.%s.jpg' % stamp, crosswalk_numpy_img)
-                  cv2.imwrite('road.%s.jpg' % stamp, road_numpy_img)
+                  cv2.imwrite('%scrosswalk.%s.jpg' % (prefixOneOffSnapshots, stamp), crosswalk_numpy_img)
+                  cv2.imwrite('%sroad.%s.jpg'      % (prefixOneOffSnapshots, stamp), road_numpy_img)
 
             #print('DETECTING PEDESTRIANS')
             pedestrianDetections = net.Detect(crosswalkMalloc, W, H, overlay)
@@ -345,8 +348,8 @@ if __name__ == "__main__":
             currentFolderStr = "%s/%04d/%04d/" % (parentFodfer, currentFolder, currentSubFolder)
             os.mkdir(currentFolderStr)
         if recordThisTime and not recordAllFrames:
-          cv2.imwrite('detect.crosswalk.%s.jpg' % detectTimestamp, crosswalk_numpy_img)
-          cv2.imwrite('detect.road.%s.jpg' % detectTimestamp, road_numpy_img)
+          cv2.imwrite('%sdetect.crosswalk.%s.jpg' % (prefixDetectionSnapshots, detectTimestamp), crosswalk_numpy_img)
+          cv2.imwrite('%sdetect.road.%s.jpg'      % (prefixDetectionSnapshots, detectTimestamp), road_numpy_img)
         if recordThisTime:
           detectfile.write("\n----------\n-- RAW DETECTIONS AT %s: %d pedestrians, %d vehicles\n" % (detectTimestamp, len(pedestrianDetections), len(vehicleDetections)))
           for d in pedestrianDetections:
