@@ -389,14 +389,14 @@ if __name__ == "__main__":
                   detectfile.write("\n  -- WARNING ACTIVATED!!!!  --\n")
                 # Deactivate Warnings after DELAY_TIME
                 scheduler.cancel()
-                scheduler = Timer(DELAY_TIME, gpios.warning_OFF, ())
+                scheduler = Timer(DELAY_TIME, gpio.warning_OFF, ())
                 scheduler.start()
             
             else:
                 
                 # Deactivate Warnings after DELAY_TIME
                 scheduler.cancel()  # Cancel every possible Scheduler Thread
-                scheduler = Timer(DELAY_TIME, gpios.security_OFF, ())  # Restart
+                scheduler = Timer(DELAY_TIME, gpio.security_OFF, ())  # Restart
                 scheduler.start()
 
         if recordThisTime:
