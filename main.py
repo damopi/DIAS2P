@@ -25,11 +25,11 @@ is_jetson = utils.is_jetson_platform()
 def finalize_jetson(sgn, frame):
   gpio.warning_OFF()
   gpio.deactivate_jetson_board()
-  print("Ending process because of signal %d" % sgn) 
+  print("Ending process because of signal %d" % sgn)
   sys.exit(0)
 
 def finalize_process(sgn, frame):
-  print("Ending process because of signal %d" % sgn) 
+  print("Ending process because of signal %d" % sgn)
   sys.exit(0)
 
 def make_handler(sgn, is_jetson):
@@ -60,13 +60,13 @@ prefixOneOffSnapshots    = prefixFrames+'snapshot/'
 prefixDetectionSnapshots = prefixFrames+'detect/'
 
 if __name__ == "__main__":
-    
+
     # ---------------------------------------
     #
     #      PARAMETER INITIALIZATION
     #
     # ---------------------------------------
-    
+
     # Show live results
     # when production set this to False as it consume resources
     SHOW_IF_NOT_JETSON = False # True
@@ -111,18 +111,18 @@ if __name__ == "__main__":
     threshold = 0.7
     W, H = (640, 480)
     net = jetson.inference.detectNet(arch, sys.argv+["--log-level=error"], threshold)
-    
+
     if CHECK_IF_RUNNING_ON_DESKTOP:
       RUNNING_ON_DESKTOP = ('DISPLAY' in os.environ) and (os.environ['DISPLAY']!='')
       if not RUNNING_ON_DESKTOP:
         SHOW_INPUTS_IF_JETSON = False
         SHOW_IF_NOT_JETSON = False
         INTERACTIVE_SETUP = False
-    
+
     # Start printing console
     consoleConfig = info.ConsoleParams()
     consoleConfig.system = platform.system()
-    
+
     # Get array of classes detected by the net
     classes = classes.classesDict
     # List to filter detections
@@ -136,15 +136,15 @@ if __name__ == "__main__":
         "bus",
         "truck",
     ]
-    
+
     # Initialize Trackers
     ped_tracker_up = BBoxTracker(15)
     ped_tracker_down = BBoxTracker(15)
     veh_tracker = BBoxTracker(15)
-    
+
     # Activate Board
     if is_jetson: gpio.activate_jetson_board()
-    
+
     # Initialize Warning scheduler
     DELAY_TIME = 5
     if is_jetson:
@@ -153,19 +153,19 @@ if __name__ == "__main__":
     else:
         # if not Jetson Platform schedule dummy GPIOs power off
         scheduler = Timer(DELAY_TIME, gpio.security_OFF, ())
-    
+
     # ---------------------------------------
     #
     #      VIDEO CAPTURE INITIALIZATION
     #
     # ---------------------------------------
-    
+
     VIDEO_PATH = "video/cross_uma_02.webm"
     VIDEO_PATH2 = "video/car_uma_01.webm"
-    
+
     # Get two Video Input Resources
     # Rather from VIDEO file (testing) or CAMERA file
-    
+
     if VIDEO:
         print('[*] Starting video...')
         crosswalkCam = cv2.VideoCapture(VIDEO_PATH)
@@ -173,7 +173,7 @@ if __name__ == "__main__":
         # Override initial width and height
         W = int(crosswalkCam.get(3))  # float
         H = int(crosswalkCam.get(4))  # float
- 
+
     elif is_jetson:
         # If in jetson platform initialize Cameras from CUDA (faster inferences)
         print("Is jetson")
@@ -185,12 +185,12 @@ if __name__ == "__main__":
         #print('STARTING ROAD CAMERA')
         roadCam = jetson.utils.gstCamera(W, H, road_idx)
         #print('FINISHED STARTING CAMERAS')
-    
+
     else:
         # If NOT in jetson platform initialize Cameras from cv2 (slower inferences)
         # Set video source from camera
         print('[*] Starting camera...')
-        
+
         # Select Road and Crosswalk cameras
         road_idx, crosswalk_idx = cameras.get_road_and_crosswalk_devices(videoConfig)
         crosswalkCam = cv2.VideoCapture(crosswalk_idx)
@@ -216,7 +216,7 @@ if __name__ == "__main__":
       minute_count = -1
 
     while True:
-        
+
         start_time = time.time()  # start time of the loop
 
         if saveFilesOnDemand and os.path.isfile('gimmeit'):
@@ -226,7 +226,7 @@ if __name__ == "__main__":
             pass
           saveFileThisTime = True
 
- 
+
         # ---------------------------------------
         #
         #              DETECTION
@@ -275,10 +275,10 @@ if __name__ == "__main__":
             else:
                 print("no more frames")
                 break
-            
+
             # Synchronize system
             jetson.utils.cudaDeviceSynchronize()
-            
+
             # Get Cuda Malloc to be used by the net
             # Get processes frame to fit Cuda Malloc Size
             crosswalkFrame, crosswalkMalloc = utils.frameToCuda(crosswalkFrame, W, H)
@@ -293,7 +293,7 @@ if __name__ == "__main__":
         #               TRACKING
         #
         # ---------------------------------------
-        
+
         # Initialize bounding boxes lists
         ped_up_bboxes = []
         ped_down_bboxes = []
@@ -368,16 +368,16 @@ if __name__ == "__main__":
         pedestriansUp = ped_tracker_up.update(ped_up_bboxes)
         pedestriansDown = ped_tracker_down.update(ped_down_bboxes)
         vehicles = veh_tracker.update(veh_bboxes)
-        
+
         # ---------------------------------------
         #
         #         MANAGING SECURITY
         #
         # ---------------------------------------
-        
+
         ped_up_crossing = tracking.is_any_bbox_moving_in_direction(pedestriansUp.values(), 'down')
         ped_down_crossing = tracking.is_any_bbox_moving_in_direction(pedestriansDown.values(), 'up')
-        
+
         if veh_bboxes and (ped_up_crossing or ped_down_crossing):
             # Security actions Here
             if is_jetson:
@@ -391,9 +391,9 @@ if __name__ == "__main__":
                 scheduler.cancel()
                 scheduler = Timer(DELAY_TIME, gpio.warning_OFF, ())
                 scheduler.start()
-            
+
             else:
-                
+
                 # Deactivate Warnings after DELAY_TIME
                 scheduler.cancel()  # Cancel every possible Scheduler Thread
                 scheduler = Timer(DELAY_TIME, gpio.security_OFF, ())  # Restart
@@ -407,32 +407,32 @@ if __name__ == "__main__":
         #           SHOWING PROGRAM INFO
         #
         # ---------------------------------------
-        
+
         consoleConfig.fps = 1.0 / (time.time() - start_time)
         consoleConfig.warnings = scheduler.is_alive()  # if True warnings are still ON
-        
+
         # Transform CUDA MALLOC to NUMPY frame
         # is highly computationally expensive for Jetson Platforms
         if SHOW_IF_NOT_JETSON and not is_jetson:
             # Activate Visual Warnings
             cv2.rectangle(crosswalkFrame, (0, 0), (200, 200), (255, 255, 255), -1)
-            
+
             # print contour
             contour.drawContour(roadFrame, roadContour)
             contour.drawContour(crosswalkFrame, crossContourUp)
             contour.drawContour(crosswalkFrame, crossContourDown)
-            
+
             # Print square detections into frame
             crosswalkFrame = info.print_items_to_frame(crosswalkFrame, pedestriansUp)
             crosswalkFrame = info.print_items_to_frame(crosswalkFrame, pedestriansDown)
-            
+
             roadFrame = info.print_items_to_frame(roadFrame, vehicles)
             roadFrame = info.print_fps_on_frame(roadFrame, consoleConfig.fps)
-            
+
             # Show the frames
             cv2.imshow("Crosswalk CAM", crosswalkFrame)
             cv2.imshow("Road CAM", roadFrame)
-        
+
         # ----------------------------------
         #
         #           PROGRAM END
