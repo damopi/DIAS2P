@@ -16,12 +16,15 @@ import numpy as np
 import signal
 import datetime
 
+gpio_pin = 18 # this must be in accordance with the physical GPIO pin used in the board
+gpio = gpios.PinController(output_pin=gpio_pin)
+
 # check if running on jetson
 is_jetson = utils.is_jetson_platform()
 
 def finalize_jetson(sgn, frame):
-  gpios.warning_OFF()
-  gpios.deactivate_jetson_board()
+  gpio.warning_OFF()
+  gpio.deactivate_jetson_board()
   print("Ending process because of signal %d" % sgn) 
   sys.exit(0)
 
@@ -137,16 +140,16 @@ if __name__ == "__main__":
     veh_tracker = BBoxTracker(15)
     
     # Activate Board
-    if is_jetson: gpios.activate_jetson_board()
+    if is_jetson: gpio.activate_jetson_board()
     
     # Initialize Warning scheduler
     DELAY_TIME = 5
     if is_jetson:
         # if in Jetson Platform schedule GPIOs power off
-        scheduler = Timer(DELAY_TIME, gpios.warning_OFF, ())
+        scheduler = Timer(DELAY_TIME, gpio.warning_OFF, ())
     else:
         # if not Jetson Platform schedule dummy GPIOs power off
-        scheduler = Timer(DELAY_TIME, gpios.security_OFF, ())
+        scheduler = Timer(DELAY_TIME, gpio.security_OFF, ())
     
     # ---------------------------------------
     #
@@ -376,7 +379,7 @@ if __name__ == "__main__":
             # Security actions Here
             if is_jetson:
                 # Activate Warnings
-                gpios.warning_ON()
+                gpio.warning_ON()
                 print("ACTIVATE WARNINGS!!!!!")
                 if recordDetections:
                   recordThisTime = True
@@ -451,8 +454,8 @@ if __name__ == "__main__":
                 detectfile.close()
               # free GPIOs before quit
               if is_jetson:
-                  gpios.warning_OFF()
-                  gpios.deactivate_jetson_board()
+                  gpio.warning_OFF()
+                  gpio.deactivate_jetson_board()
               # close any open windows
               cv2.destroyAllWindows()
               break

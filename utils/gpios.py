@@ -7,30 +7,32 @@ if is_jetson_platform():
     import Jetson.GPIO as GPIO  # prevents GPIO to be imported on non jetson devices
 
 
-def activate_jetson_board():
-    
+class PinController:
+  def __init__(self, output_pin=18):
+    self.output_pin = output_pin
+
+  def activate_jetson_board(self):
+
     """
     Activates jetson GPIO 18
     """
-    
-    # Pin 18 == 12 on the header
-    output_pin = 18
+
     # Board pin-numbering scheme
     GPIO.setmode(GPIO.BCM)
     # set pin as an output pin with optional initial state of LOW
-    GPIO.setup(output_pin, GPIO.OUT, initial=GPIO.LOW)
+    GPIO.setup(self.output_pin, GPIO.OUT, initial=GPIO.LOW)
 
 
-def deactivate_jetson_board():
-    
+  def deactivate_jetson_board(self):
+
     """
     deactivates jetson GPIOs
     """
-    
+
     GPIO.cleanup()
 
 
-def security_OFF():
+  def security_OFF(self):
     """
     dummy function mimic GPIO OFF in Jetson devices
     """
@@ -38,7 +40,7 @@ def security_OFF():
     pass
 
 
-def security_ON():
+  def security_ON(self):
     """
     dummy function mimic GPIO ON in Jetson devices
     """
@@ -46,42 +48,43 @@ def security_ON():
     pass
 
 
-def warning_ON(output_pin=18):
-    
+  def warning_ON(self):
+
     """
     turns selected GPIO ON
     :param output_pin: int, GPIO position
     """
-    
+
     print("WARNING GOING ON")
-    GPIO.output(output_pin, GPIO.HIGH)
+    GPIO.output(self.output_pin, GPIO.HIGH)
 
 
-def warning_OFF(output_pin=18):
-    
+  def warning_OFF(self):
+
     """
     turns selected GPIO OFF
     :param output_pin: int, GPIO position
     """
-    
+
     print("WARNING GOING OFF")
-    GPIO.output(output_pin, GPIO.LOW)
+    GPIO.output(self.output_pin, GPIO.LOW)
 
 
 if __name__ == '__main__':
-    
+
     """
     Quick check of GPIO 18
     """
-    
-    activate_jetson_board()
+
+    controller = PinController()
+    controller.activate_jetson_board()
     try:
         while True:
             print('warnings activated')
-            warning_ON()
+            controller.warning_ON()
             time.sleep(2)
             print('warnings OFF')
-            warning_OFF()
+            controller.warning_OFF()
             time.sleep(2)
     finally:
-        deactivate_jetson_board()
+        controller.deactivate_jetson_board()
