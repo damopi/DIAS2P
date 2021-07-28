@@ -14,8 +14,8 @@ After=graphical.target
 Type=simple
 #NotifyAccess=main
 KillMode=control-group
-User=$USER
-Group=$GROUP
+#User=$USER
+#Group=$GROUP
 Environment="DAEMONIZE_ME=on"
 Environment="PYTHONUNBUFFERED=1"
 WorkingDirectory=$FULL_PATH_TO_SCRIPT_FOLDER

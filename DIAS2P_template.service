@@ -11,8 +11,8 @@ After=graphical.target
 [Service]
 Type=notify
 NotifyAccess=main
-User=$USER
-Group=$GROUP
+#User=$USER
+#Group=$GROUP
 WorkingDirectory=$FULL_PATH_TO_SCRIPT_FOLDER
 Environment="DAEMONIZE_ME=on"
 Environment="PYTHONUNBUFFERED=1"
