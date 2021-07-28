@@ -345,7 +345,7 @@ if __name__ == "__main__":
               currentSubFolder = 0
               currentFolder += 1
               os.mkdir("%s/%04d" % (parentFolder, currentFolder))
-            currentFolderStr = "%s/%04d/%04d/" % (parentFodfer, currentFolder, currentSubFolder)
+            currentFolderStr = "%s/%04d/%04d/" % (parentFolder, currentFolder, currentSubFolder)
             os.mkdir(currentFolderStr)
         if recordThisTime and not recordAllFrames:
           cv2.imwrite('%sdetect.crosswalk.%s.jpg' % (prefixDetectionSnapshots, detectTimestamp), crosswalk_numpy_img)
