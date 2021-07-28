@@ -1,4 +1,4 @@
-from tabulate import tabulate
+#from tabulate import tabulate
 from sys import stdout
 import cv2
 
@@ -28,12 +28,12 @@ def print_console(params: ConsoleParams):
         warnings = "OFF"
     
     system = params.system
-    template = tabulate(
-        [
-            ["WARNINGS:", warnings],
-            ["FPS:", str(fps)]
-        ]
-    )
+    template = "-- FPS: %s / WARNINGS: %s" % (str(fps), warnings) #tabulate(
+        #[
+        #    ["WARNINGS:", warnings],
+        #    ["FPS:", str(fps)]
+        #]
+    #)
     
     print(system+'. '+template)
     #console.clear()
