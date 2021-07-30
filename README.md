@@ -81,7 +81,10 @@ sudo journalctl -u DIAS2P.service -e
 In daemon mode, the app will log the FPS rate every minute, and it might log hundreds of
 `jetson.inference -- PyDetection_Dealloc()` messages per minute. If gStreamer fails to
 set up the pipelines, this will not happen, and 30 seconds after starting up, systemd will
-kill and restart `main.py`. If you see this happening, please stop the daemon:
+kill and restart `main.py` (this is dutifully logged by systemd in the same logs;
+just remember that journalctl does not update the logs it displays to you,
+so you have to quit journalctl and run it again in order to see new logs).
+If you see this happening, please stop the daemon:
 
 ```
 sudo systemctl stop DIAS2P.service
