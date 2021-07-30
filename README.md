@@ -34,19 +34,86 @@ actually starting the inference and the warning logic.
 This is, of course, quite inconvenient for unattended usage, because you NEED
 to be able to run and forget. To this end, the configuration can be saved (to
 *.npy files for areas within cameras' FOV and configuration values for camera
-indexes within main.py). You can then configure this app as a systemd service
+indexes within `main.py`). You can then configure this app as a systemd service
 that will be started automatically upon reboot, and restarted if crashed.
 
-A mild annoyance: our current protetypes use what I suppose are dirt-cheap USB
-cameras whose ID_SERIAL numbers are all the same (not seriously, thats DUMB),
+A mild annoyance: our current prototypes use what I suppose are USB
+cameras whose `ID_SERIAL` numbers are all the same (alas, engineering!),
 so we have NO WAY to configure udev so each index corresponds unequivocally
 to each camera. Even worse: the camera index assignment varies across reboots,
 sometimes even mixing up the indexes of the onboard camera and the other USB
-cameras. Unless we use cameras with different ID_SERIAL strings, THERE IS NO
-WAY TO LEAVE THIS FULLY UNATTENDED. All that can be done is to mitigate the
-issues about app crashes.
+cameras. The way around this is to set up the cameras to be used by usb path
+
+Anyway, THER IS NO WAY TO LEAVE THIS FULLY UNATTENDED, because ocasionally gStreamer
+will fail to set up its pipeline, and there is currently no fully automated way around this.
+All that can be done is to mitigate the issues about app crashes.
 
 Currently, if started as a systemd daemon, the app will save snapshots from the
 cameras at startup with a fixed name, and will save additional snapshots everytime
-a file named "gimmeit" is created in its working directory.
+a file named `gimmeit` is created in its working directory (the one hosting main.py).
+
+## Running as a service in Jetson TX2
+
+First, you have to run the app (`main.py`) in a Desktop (and with `INTERACTIVE_SETUP` set to `True`
+in `main.py`) in order to see which camera is facing the road and which one is facing the
+crosswalk (and configuring accordingly `'byPathRoad'` and `'byPathCrosswalk'` in the `videoConfig`
+dictionary in `main.py`). Also, you have to define the crosswalk areas as asked by the script.
+
+After that, you can use the following commands to start the app as a daemon service:
+
+```
+# This has to be done just once at the beginning,
+# because if the service is enabled,
+# it will start automatically after rebooting
+sudo systemctl enable DIAS2P.service
+# This has to be done to actually start the service
+# after enabling it, if you do not want to reboot
+sudo systemctl start DIAS2P.service
+```
+
+However, out prototype is somewhat finicky, and gStreamer sometimes fails to set up the pipelines.
+You can check the last segment of the daemon's logs with this command:
+
+```
+sudo journalctl -u DIAS2P.service -e
+```
+
+In daemon mode, the app will log the FPS rate every minute, and it might log hundreds of
+`jetson.inference -- PyDetection_Dealloc()` messages per minute. If gStreamer fails to
+set up the pipelines, this will not happen, and 30 seconds after starting up, systemd will
+kill and restart `main.py`. If you see this happening, please stop the daemon:
+
+```
+sudo systemctl stop DIAS2P.service
+```
+
+Sometimes, the app will work as a daemon if you have just suceeded in running it from the command line, directly, like this:
+
+```
+cd ~/Desktop/DIAS2P
+# you may need to prefix the following command with sudo, depending on the setup
+python3 main.py
+```
+
+If the app runs normally (logging FPS rate and lots of `PyDetection_Dealloc` message every frame),
+you can stop it and try to start again the daemon. If it doesn't (or the daemon still refuses
+to work), you can reboot and try again. Be aware that after enabling the service, it will always
+start up on every reboot until you disable it, and the first run after booting up may fail
+because it may start before the cameras and the filesystem are fully ready,
+but it should work normally after systemd kills the app and restarts it for the first time
+(if not, stop it and try again the previous procedure).
+
+
+## Recording video
+
+There is another daemon service to record video from both cameras, aptly named recordVideos.
+It will record video and save it in ~1 minute mp4 clips encoded in x264.
+Gstreamer will be used for this, but ffmepg may be also used. There is one ugly showstopper:
+the Jetson TX2 board will require a screen to be connected to record video.
+This happens both with gstreamer and ffmpeg, but only when encoding video
+instead of just showing it up in a window in the Desktop
+(if headless, a Jetson TX2 will set up a small virtual screen and will boot up to Desktop).
+I am chalking this up to some insane hack put together in some low-level layer related
+to video handling by NVidia.
+
 
