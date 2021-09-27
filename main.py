@@ -202,7 +202,8 @@ if __name__ == "__main__":
     # Get ROIs from cross and road cam
     crossContourUp   = contour.select_points_in_frame(crosswalkCam, 'crossContourUp',   is_jetson=is_jetson, is_interactive=INTERACTIVE_SETUP)
     crossContourDown = contour.select_points_in_frame(crosswalkCam, 'crossContourDown', is_jetson=is_jetson, is_interactive=INTERACTIVE_SETUP)
-    roadContour      = contour.select_points_in_frame(     roadCam, 'roadContour',      is_jetson=is_jetson, is_interactive=INTERACTIVE_SETUP)
+    roadContour      = contour.select_points_in_frame(     roadCam, 'roadContour',      is_jetson=is_jetson, is_interactive=INTERACTIVE_SETUP,
+point_nb=6)
 
     # ---------------------------------------
     #
