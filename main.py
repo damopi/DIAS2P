@@ -59,6 +59,8 @@ detectionsLog = prefixFrames+'detections.log'
 prefixOneOffSnapshots    = prefixFrames+'snapshot/'
 prefixDetectionSnapshots = prefixFrames+'detect/'
 
+useTrackerForWarnings = True
+
 if __name__ == "__main__":
 
     # ---------------------------------------
@@ -379,7 +381,12 @@ point_nb=6)
         ped_up_crossing = tracking.is_any_bbox_moving_in_direction(pedestriansUp.values(), 'down')
         ped_down_crossing = tracking.is_any_bbox_moving_in_direction(pedestriansDown.values(), 'up')
 
-        if veh_bboxes and (ped_up_crossing or ped_down_crossing):
+        if useTrackerForWarnings:
+          activateWarnings = veh_bboxes and (ped_up_crossing or ped_down_crossing)
+        else:
+          activateWarnings = veh_bboxes and (ped_up_bboxes or ped_down_bboxes)
+
+        if activateWarnings:
             # Security actions Here
             if is_jetson:
                 # Activate Warnings
