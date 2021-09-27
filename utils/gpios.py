@@ -58,7 +58,7 @@ class PinController:
     """
 
     print("WARNING GOING ON")
-    GPIO.output(self.output_pin, GPIO.HIGH)
+    #GPIO.output(self.output_pin, GPIO.HIGH)
 
 
   def warning_OFF(self):
@@ -69,7 +69,7 @@ class PinController:
     """
 
     print("WARNING GOING OFF")
-    GPIO.output(self.output_pin, GPIO.LOW)
+    #GPIO.output(self.output_pin, GPIO.LOW)
 
 
 if __name__ == '__main__':
