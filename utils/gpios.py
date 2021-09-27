@@ -90,3 +90,14 @@ if __name__ == '__main__':
             time.sleep(2)
     finally:
         controller.deactivate_jetson_board()
+
+
+def testit(output_pin, tsleep):
+  p = PinController(output_pin=output_pin)
+  p.activate_jetson_board()
+  p.warning_ON()
+  time.sleep(tsleep)
+  p.warning_OFF()
+  p.deactivate_jetson_board()
+
+
