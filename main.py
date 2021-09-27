@@ -108,6 +108,7 @@ if __name__ == "__main__":
         os.mkdir(currentFolderStr)
 
     # load the object detection network
+    accelerated_gstreamer = True
     arch = "ssd-mobilenet-v2"
     overlay = "box,labels,conf"
     threshold = 0.7
@@ -176,7 +177,7 @@ if __name__ == "__main__":
         W = int(crosswalkCam.get(3))  # float
         H = int(crosswalkCam.get(4))  # float
 
-    elif is_jetson:
+    elif is_jetson and accelerated_gstreamer:
         # If in jetson platform initialize Cameras from CUDA (faster inferences)
         print("Is jetson")
         print('[*] Starting camera...')
