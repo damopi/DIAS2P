@@ -48,11 +48,11 @@ if isdaemon:
 saveFilesOnDemand = is_jetson
 saveFileThisTime  = False
 
-recordAllFrames = True
-prefixFrames = '/media/tegra/Maxtor/'
+recordAllFrames = False
+prefixFrames = ''
 numRecordsToFragment = 5000
 
-recordDetections = True
+recordDetections = False
 recordThisTime = False
 detectionsLog = prefixFrames+'detections.log'
 
@@ -71,11 +71,11 @@ if __name__ == "__main__":
     # when production set this to False as it consume resources
     SHOW_IF_NOT_JETSON = False # True
     VIDEO = False
-    SHOW_INPUTS_IF_JETSON = False
+    SHOW_INPUTS_IF_JETSON = True
     # tell the script if it can spawn windows to show images
     RUNNING_ON_DESKTOP = False #True
     # right now, this only works in *NIX, so set to False if you're on Windows/MAC
-    CHECK_IF_RUNNING_ON_DESKTOP = True
+    CHECK_IF_RUNNING_ON_DESKTOP = False
     # the setup is interactive by default
     INTERACTIVE_SETUP = False #True
     # IF YOU HAVE PROBLEMS OPENING VIDEO, VIDEO DEVICE FILES MIGHT HAVE NONCONVENTIONAL INDEXES!
