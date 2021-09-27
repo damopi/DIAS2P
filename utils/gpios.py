@@ -4,6 +4,8 @@ from utils.utils import is_jetson_platform
 import time
 
 if is_jetson_platform():
+    # if loading this fails, try this (or equivalent) before launching python:
+    #     export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libgomp.so.1
     import Jetson.GPIO as GPIO  # prevents GPIO to be imported on non jetson devices
 
 
