@@ -128,7 +128,7 @@ def select_points_in_frame(cam, name, point_nb=4, is_jetson=False, is_interactiv
     clean_frame = first_frame.copy()
 
     # Name frame of cam
-    cv2.namedWindow("first_frame")
+    cv2.namedWindow("first_frame")#, cv2.WINDOW_NORMAL)
 
     # Call Mouse Function to get points on frame
     cv2.setMouseCallback("first_frame", left_click, params)
@@ -156,6 +156,9 @@ def select_points_in_frame(cam, name, point_nb=4, is_jetson=False, is_interactiv
             cv2.putText(first_frame, ins, (20, 30 * (idx + 1)), cv2.FONT_HERSHEY_DUPLEX, 0.8, (0, 0, 0), 2)
 
         # Show Frame
+
+        #cv2. setWindowProperty( "first_frame",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+
         cv2.imshow("first_frame", first_frame)
 
         # Wait for any key to be pressed
@@ -186,7 +189,13 @@ def select_points_in_frame(cam, name, point_nb=4, is_jetson=False, is_interactiv
         # If press 'c' restart selected points
         if key == ord("c"):
             # Read frame of cam
-            _, first_frame = cam.read()
+            if is_jetson:
+                imgFromCamera, width, height = cam.CaptureRGBA(zeroCopy=1)
+                jetson.utils.cudaDeviceSynchronize()
+                first_frame = jetson.utils.cudaToNumpy(imgFromCamera, width, height, 4)
+                first_frame = cv2.cvtColor(first_frame.astype(np.uint8), cv2.COLOR_RGBA2BGR)
+            else:
+                _, first_frame = cam.read()
             # Make copy
             clean_frame = first_frame.copy()
             # Reset points list
@@ -230,5 +239,7 @@ def left_click(event, x, y, flags, param):
     allow_selection = len(points) < limit_of_points
 
     # On double click get append coordinates
+    #print('LEFT CLICK!!!')
     if event == cv2.EVENT_LBUTTONDBLCLK and allow_selection:
+        print('POINT APPENDED!!!')
         points.append([x, y])
