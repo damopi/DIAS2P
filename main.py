@@ -334,7 +334,7 @@ point_nb=6)
 
 
         if recordThisTime or recordAllFrames:
-          detectTimestamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%f")
+          detectTimestamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M.%S.%f")
         if recordAllFrames:
           cv2.imwrite('%scrosswalk.%s.jpg' % (currentFolderStr, detectTimestamp), crosswalk_numpy_img)
           cv2.imwrite('%sroad.%s.jpg' % (currentFolderStr, detectTimestamp), road_numpy_img)
