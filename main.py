@@ -254,9 +254,10 @@ point_nb=6)
                 road_numpy_img = jetson.utils.cudaToNumpy(roadMalloc, W, H, 4)
                 crosswalk_numpy_img = cv2.cvtColor(crosswalk_numpy_img.astype(np.uint8), cv2.COLOR_RGBA2BGR)
                 road_numpy_img = cv2.cvtColor(road_numpy_img.astype(np.uint8), cv2.COLOR_RGBA2BGR)
-                if SHOW_INPUTS_IF_JETSON:
-                  cv2.imshow("crosswalk", crosswalk_numpy_img)
-                  cv2.imshow("road", road_numpy_img)
+                # show images here only for debug purposes
+                #if SHOW_INPUTS_IF_JETSON:
+                #  cv2.imshow("crosswalk", crosswalk_numpy_img)
+                #  cv2.imshow("road", road_numpy_img)
                 if saveFileThisTime:
                   saveFileThisTime = False
                   stamp = datetime.datetime.now().strftime("%Y.%m.%d.%H.%M")
@@ -420,6 +421,20 @@ point_nb=6)
         consoleConfig.fps = 1.0 / (time.time() - start_time)
         consoleConfig.warnings = scheduler.is_alive()  # if True warnings are still ON
 
+        if (not accelerated_gstreamer or doZeroCopy) and SHOW_INPUTS_IF_JETSON:
+            contour.drawContour(road_numpy_img, roadContour)
+            contour.drawContour(crosswalk_numpy_img, crossContourUp)
+            contour.drawContour(crosswalk_numpy_img, crossContourDown)
+            if useTrackerForWarnings:
+              crosswalk_numpy_img = info.print_items_to_frame(crosswalk_numpy_img, pedestriansUp)
+              crosswalk_numpy_img = info.print_items_to_frame(crosswalk_numpy_img, pedestriansDown)
+              road_numpy_img      = info.print_items_to_frame(road_numpy_img, vehicles)
+            else:
+              crosswalk_numpy_img = info.print_bboxes_to_frame(crosswalk_numpy_img, ped_up_bboxes)
+              crosswalk_numpy_img = info.print_bboxes_to_frame(crosswalk_numpy_img, ped_down_bboxes)
+              road_numpy_img      = info.print_bboxes_to_frame(road_numpy_img, veh_bboxes)
+            cv2.imshow("crosswalk", crosswalk_numpy_img)
+            cv2.imshow("road", road_numpy_img)
         # Transform CUDA MALLOC to NUMPY frame
         # is highly computationally expensive for Jetson Platforms
         if SHOW_IF_NOT_JETSON and not is_jetson:
