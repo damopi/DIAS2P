@@ -310,7 +310,7 @@ point_nb=6)
         for detection in pedestrianDetections:
             bbox = BBox(detection)
             if bbox.name in pedestrian_classes:
-                recordThisTime = True
+                recordThisTime = recordDetections
                 if tracking.is_point_in_contour(crossContourUp, bbox.center):
                     ped_up_bboxes.append(bbox)
                     ped_up_idxs.append(ped_idx)
@@ -327,7 +327,7 @@ point_nb=6)
             bbox = BBox(detection)
             is_bbox_in_contour = tracking.is_point_in_contour(roadContour, bbox.center)
             if bbox.name in vehicle_classes and is_bbox_in_contour:
-                recordThisTime = True
+                recordThisTime = recordDetections
                 veh_bboxes.append(bbox)
                 veh_idxs.append(vec_idx)
             vec_idx += 1
