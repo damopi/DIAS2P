@@ -42,12 +42,15 @@ def run_script():
     p=subprocess.Popen(com, shell=True)
     processes.append(p)
   print("All children launched")
-  if isdaemon:
+  if isdaemon and False:
     numFiles1 = len(os.listdir(prefix))
+    print("There are %d files in %s at %s" % (numFiles1, prefix, datetime.datetime.now().strftime("%Y.%m.%d.%H.%M")))
     while True:
-      time.sleep(600)
+      time.sleep(120)
       numFiles2 = len(os.listdir(prefix))
+      print("There are %d files in %s at %s" % (numFiles2, prefix, datetime.datetime.now().strftime("%Y.%m.%d.%H.%M")))
       if numFiles1==numFiles2:
+        print("REBOOTING!!!!")
         os.system('sudo reboot')
       numFiles1 = numFiles2
   for p in processes:
