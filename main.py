@@ -433,27 +433,6 @@ point_nb=6)
               road_numpy_img      = info.print_bboxes_to_frame(road_numpy_img, veh_bboxes)
             cv2.imshow("crosswalk", crosswalk_numpy_img)
             cv2.imshow("road", road_numpy_img)
-        # Transform CUDA MALLOC to NUMPY frame
-        # is highly computationally expensive for Jetson Platforms
-        if SHOW_IF_NOT_JETSON and not is_jetson:
-            # Activate Visual Warnings
-            cv2.rectangle(crosswalkFrame, (0, 0), (200, 200), (255, 255, 255), -1)
-
-            # print contour
-            contour.drawContour(roadFrame, roadContour)
-            contour.drawContour(crosswalkFrame, crossContourUp)
-            contour.drawContour(crosswalkFrame, crossContourDown)
-
-            # Print square detections into frame
-            crosswalkFrame = info.print_items_to_frame(crosswalkFrame, pedestriansUp)
-            crosswalkFrame = info.print_items_to_frame(crosswalkFrame, pedestriansDown)
-
-            roadFrame = info.print_items_to_frame(roadFrame, vehicles)
-            roadFrame = info.print_fps_on_frame(roadFrame, consoleConfig.fps)
-
-            # Show the frames
-            cv2.imshow("Crosswalk CAM", crosswalkFrame)
-            cv2.imshow("Road CAM", roadFrame)
 
         # ----------------------------------
         #
