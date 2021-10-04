@@ -10,7 +10,6 @@ import time
 from threading import Timer
 from utils import utils, classes, gpios, cameras, info, tracking, contour
 from trackers.bboxssd import BBox
-from trackers.bboxssdtracker import BBoxTracker
 import platform
 import numpy as np
 import signal
@@ -141,9 +140,10 @@ if __name__ == "__main__":
     ]
 
     # Initialize Trackers
-    ped_tracker_up = BBoxTracker(15)
-    ped_tracker_down = BBoxTracker(15)
-    veh_tracker = BBoxTracker(15)
+    ped_tracker = tracking.Tracker(200, 10, 200*100)
+    veh_tracker = tracking.Tracker(200, 10, 200*100)
+    peds_tracked = tracking.PedestrianTracking()
+    vehs_tracked = tracking.VehicleTracking()
 
     # Activate Board
     if is_jetson: gpio.activate_jetson_board()
@@ -370,9 +370,11 @@ point_nb=6)
 
         # Relate previous detections to new ones
         # updating trackers
-        pedestriansUp = ped_tracker_up.update(ped_up_bboxes)
-        pedestriansDown = ped_tracker_down.update(ped_down_bboxes)
-        vehicles = veh_tracker.update(veh_bboxes)
+        vehicle_idxs, removed_vehicle_idxs       = veh_tracker.assign_incomming_positions(np.array([x.center for x in veh_bboxes]))
+        pedestrian_idxs, removed_pedestrian_idxs = ped_tracker.assign_incomming_positions(np.array([x.center for x in ped_up_bboxes + ped_down_bboxes]))
+        # going_up, going_down is to keep track of pedestrians who have been detected to cross the crosswalk
+        going_up, going_down = peds_tracked.update_pos(removed_pedestrian_idxs, pedestrian_idxs[:len(ped_up_bboxes)], ped_up_bboxes, pedestrian_idxs[len(ped_up_bboxes):], ped_down_bboxes)
+        vehs_tracked.update_pos(removed_vehicle_idxs, vehicle_idxs, veh_bboxes)
 
         # ---------------------------------------
         #
@@ -380,11 +382,8 @@ point_nb=6)
         #
         # ---------------------------------------
 
-        ped_up_crossing = tracking.is_any_bbox_moving_in_direction(pedestriansUp.values(), 'down')
-        ped_down_crossing = tracking.is_any_bbox_moving_in_direction(pedestriansDown.values(), 'up')
-
         if useTrackerForWarnings:
-          activateWarnings = veh_bboxes and (ped_up_crossing or ped_down_crossing)
+          activateWarnings = vehs_tracked.any_currently_tracked() and peds_tracked.any_currently_tracked()
         else:
           activateWarnings = veh_bboxes and (ped_up_bboxes or ped_down_bboxes)
 
@@ -426,9 +425,8 @@ point_nb=6)
             contour.drawContour(crosswalk_numpy_img, crossContourUp)
             contour.drawContour(crosswalk_numpy_img, crossContourDown)
             if useTrackerForWarnings:
-              crosswalk_numpy_img = info.print_items_to_frame(crosswalk_numpy_img, pedestriansUp)
-              crosswalk_numpy_img = info.print_items_to_frame(crosswalk_numpy_img, pedestriansDown)
-              road_numpy_img      = info.print_items_to_frame(road_numpy_img, vehicles)
+              crosswalk_numpy_img = info.print_items_to_frame(crosswalk_numpy_img, peds_tracked.get_tracked_bboxes())
+              road_numpy_img      = info.print_items_to_frame(road_numpy_img, vehs_tracked.get_tracked_bboxes())
             else:
               crosswalk_numpy_img = info.print_bboxes_to_frame(crosswalk_numpy_img, ped_up_bboxes)
               crosswalk_numpy_img = info.print_bboxes_to_frame(crosswalk_numpy_img, ped_down_bboxes)
