@@ -8,7 +8,7 @@ import os
 import os.path
 import time
 from threading import Timer
-from utils import utils, classes, gpios, cameras, info, tracking, contour
+from utils import utils, classes, gpios, cameras, info, tracking, contour, backend
 from trackers.bboxssd import BBox
 import platform
 import numpy as np
@@ -54,6 +54,17 @@ numRecordsToFragment = 5000
 recordDetections = False
 recordThisTime = False
 detectionsLog = prefixFrames+'detections.log'
+
+recordCountsByMinute = True
+recordCountsByHour   = True
+recordCountsByDay    = True
+projName             = "dias2p"
+# DO NOT SAVE TO GIT THE CREDENTIALS FILE!!!!!
+# THIS FILE WAS GENERATED FROM THIS PAGE: https://console.firebase.google.com/u/1/project/dias2p/settings/serviceaccounts/databasesecrets
+credsFile            = 'DIAS2P_credentials.json'
+counters             = backend.RecordCounters(
+  recordCountsByMinute, recordCountsByHour, recordCountsByDay,
+  projName, credsFile)
 
 prefixOneOffSnapshots    = prefixFrames+'snapshot/'
 prefixDetectionSnapshots = prefixFrames+'detect/'
@@ -141,7 +152,7 @@ if __name__ == "__main__":
 
     # Initialize Trackers
     ped_tracker = tracking.Tracker(200, 10, 200*100)
-    veh_tracker = tracking.Tracker(200, 10, 200*100)
+    veh_tracker = tracking.Tracker(200, 15, 200*100)
     peds_tracked = tracking.PedestrianTracking()
     vehs_tracked = tracking.VehicleTracking()
 
@@ -374,7 +385,10 @@ point_nb=6)
         pedestrian_idxs, removed_pedestrian_idxs = ped_tracker.assign_incomming_positions(np.array([x.center for x in ped_up_bboxes + ped_down_bboxes]))
         # going_up, going_down is to keep track of pedestrians who have been detected to cross the crosswalk
         going_up, going_down = peds_tracked.update_pos(removed_pedestrian_idxs, pedestrian_idxs[:len(ped_up_bboxes)], ped_up_bboxes, pedestrian_idxs[len(ped_up_bboxes):], ped_down_bboxes)
-        vehs_tracked.update_pos(removed_vehicle_idxs, vehicle_idxs, veh_bboxes)
+        new_vehicle_idxs     = vehs_tracked.update_pos(removed_vehicle_idxs, vehicle_idxs, veh_bboxes)
+
+        # count vehicles and pedestrian and post regular counts to the backend
+        counters.add(new_vehicle_idxs, going_up, going_down)
 
         # ---------------------------------------
         #

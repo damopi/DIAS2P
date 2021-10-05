@@ -47,8 +47,12 @@ class VehicleTracking:
     for i in idxsToRemove:
       if i in self.positions:
         del self.positions[i]
+    areNew = []
     for i, bbox in zip(idxsPresent, bboxes):
+      if i not in self.positions:
+        areNew.append(i)
       self.positions[i] = bbox
+    return areNew
 
 
 def create_costs_matrix(A : np.ndarray, B: np.ndarray) -> np.ndarray:
