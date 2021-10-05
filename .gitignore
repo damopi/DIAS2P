@@ -7,5 +7,7 @@ __pycache__
 *.mp4
 *.jpg
 *.log
+*.json
+*.service
 detect/*
 snapshot/*
