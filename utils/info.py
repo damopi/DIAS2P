@@ -93,7 +93,7 @@ def print_items_to_frame(frame, items):
         ids = k
         bbox = v
         
-        text_over_bbox = str(ids) + ': ' + bbox.mov[1]
+        text_over_bbox = str(ids)
         
         fr = cv2.rectangle(
             fr,
