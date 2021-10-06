@@ -149,12 +149,17 @@ if __name__ == "__main__":
         "bus",
         "truck",
     ]
+    pedestrian_vehicle_classes = ["motorcycle"]
+    motorcycle_index = classes.index("motorcycle")
+    min_motorcycle_distance_to_pedestrian = 70 # in pixels
 
     # Initialize Trackers
     ped_tracker = tracking.Tracker(200, 10, 200*100)
     veh_tracker = tracking.Tracker(200, 15, 200*100)
+    mot_tracker = tracking.Tracker(200,  5, 200*100)
     peds_tracked = tracking.PedestrianTracking()
     vehs_tracked = tracking.VehicleTracking()
+    mots_tracked = tracking.VehicleTracking()
 
     # Activate Board
     if is_jetson: gpio.activate_jetson_board()
@@ -314,25 +319,48 @@ point_nb=6)
         ped_up_bboxes = []
         ped_down_bboxes = []
         veh_bboxes = []
+        mot_bboxes = []
+        ped_bboxes = []
         ped_up_idxs = []
         ped_down_idxs = []
         veh_idxs = []
 
         # Convert Crosswalk Detections to Bbox object
-        # filter detections if recognised as pedestrians
-        # add to pedestrian list of bboxes
-        ped_idx = 0
+        # filter detections if recognised as pedestrians / motorcycles
         for detection in pedestrianDetections:
             bbox = BBox(detection)
             if bbox.name in pedestrian_classes:
-                recordThisTime = recordDetections
-                if tracking.is_point_in_contour(crossContourUp, bbox.center):
-                    ped_up_bboxes.append(bbox)
-                    ped_up_idxs.append(ped_idx)
-                if tracking.is_point_in_contour(crossContourDown, bbox.center):
-                    ped_down_bboxes.append(bbox)
-                    ped_down_idxs.append(ped_idx)
-            ped_idx += 1
+              ped_bboxes.append(bbox)
+            elif bbox.name in pedestrian_vehicle_classes:
+              mot_bboxes.append(bbox)
+
+        # do motorcycle tracking before anything else, to use tracked motorcycles to cull the associated false positives in pedestrian bboxes.
+        motorcycle_idxs, removed_motorcycle_idxs  = mot_tracker.assign_incomming_positions(np.array([x.center for x in mot_bboxes]))
+        _ = mots_tracked.update_pos(removed_motorcycle_idxs, motorcycle_idxs, mot_bboxes)
+
+        # add pedestrian list of bboxes
+        ped_idx = 0
+        mot_bboxes = mots_tracked.get_tracked_bboxes()
+        for bbox in ped_bboxes:
+          valid = True
+          pcenter = bbox.center
+          for mot in mot_bboxes.values():
+            mcenter = mot.center
+            if (abs(mcenter[0]-pcenter[0])<min_motorcycle_distance_to_pedestrian and
+                abs(mcenter[1]-pcenter[1])<min_motorcycle_distance_to_pedestrian):
+              valid = False
+              break
+          if valid:
+            if tracking.is_point_in_contour(crossContourUp, bbox.center):
+              ped_up_bboxes.append(bbox)
+              ped_up_idxs.append(ped_idx)
+              ped_idx += 1
+              recordThisTime = recordDetections
+            elif tracking.is_point_in_contour(crossContourDown, bbox.center):
+              ped_down_bboxes.append(bbox)
+              ped_down_idxs.append(ped_idx)
+              ped_idx += 1
+              recordThisTime = recordDetections
 
         # Convert Road Detections to Bbox object
         # filter detections if recognised as vehicles
