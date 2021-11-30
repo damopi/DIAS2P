@@ -1,13 +1,13 @@
-from utils import classes
+from utils import classes_ssd
 from collections import deque
 
 
-class BBox:
+class BBox_ssd:
 
         def __init__(self, detection):
 
                 self.detection = detection
-                self.name = classes.classesDict[detection.ClassID]
+                self.name = classes_yolo.classesDict[detection.ClassID]
                 self.start_point = (int(detection.Left), int(detection.Top))
                 self.end_point = (int(detection.Right), int(detection.Bottom))
                 self.center = tuple(map(int, detection.Center))
@@ -26,11 +26,8 @@ class BBox:
                 # Set color only to known classes
                 self.color = self.colors[self.name] if self.name in self.colors.keys() else self.colors['unknown']
 
-
-
-
-
-
-
+                # Initialize Movement variables
+                # It tracks whether the object is going
+                # up down right or left
 
 
